@@ -1,5 +1,10 @@
+import { useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
+import { fetchNearestServices } from "../../src/api/services";
+import { EmptyState } from "../../src/components/EmptyState";
+import { ErrorState } from "../../src/components/ErrorState";
 import { ServiceCard } from "../../src/components/ServiceCard";
+import { Spinner } from "../../src/components/Spinner";
 import { useLocation } from "../../src/hooks/useLocation";
 import { BriefServiceResponse } from "../../src/types";
 
@@ -147,11 +152,62 @@ const MOCK_SERVICES: BriefServiceResponse[] = [
 ];
 
 export default function NearbyServicesScreen() {
-  const { location, loading, error } = useLocation();
+  const { location, loading: locLoading, error: locError } = useLocation();
 
-  if (loading) return <Text>Loading location...</Text>;
-  if (error || !location)
-    return <Text>{error || "Failed to get location"}</Text>;
+  const [services, setServices] = useState<BriefServiceResponse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!location) return;
+
+    const controller = new AbortController();
+
+    setLoading(true);
+    setError(null);
+
+    fetchNearestServices(location.lat, location.lon, controller.signal)
+      .then(setServices)
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setError("Failed to load nearby services");
+        }
+      })
+      .finally(() => setLoading(false));
+
+    // cleanup
+    return () => {
+      controller.abort();
+    };
+  }, [location?.lat, location?.lon]);
+
+  // render logic
+  if (locLoading || loading) {
+    return <Spinner />;
+  }
+
+  if (locError) {
+    return <ErrorState message={locError} />;
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        message={error}
+        onRetry={() => {
+          /* TODO: retry logic */
+        }}
+      />
+    );
+  }
+
+  if (!location) {
+    return <ErrorState message="Location unavailable" />;
+  }
+
+  if (services.length === 0) {
+    return <EmptyState text="No nearby services" />;
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: "#800000", padding: 1.5 }}>
@@ -167,7 +223,7 @@ export default function NearbyServicesScreen() {
       </Text>
 
       <FlatList
-        data={MOCK_SERVICES}
+        data={services}
         keyExtractor={(item) =>
           item.serviceGroup.routeShortName + item.serviceGroup.tripHeadsign
         }
