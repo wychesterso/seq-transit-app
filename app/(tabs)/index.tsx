@@ -151,6 +151,11 @@ const MOCK_SERVICES: BriefServiceResponse[] = [
   },
 ];
 
+function hasArrivals(service: BriefServiceResponse): boolean {
+  const arrivals = service.arrivalsAtNearestStop?.nextThreeArrivals;
+  return arrivals && arrivals.length > 0;
+}
+
 export default function NearbyServicesScreen() {
   const { location, loading: locLoading, error: locError } = useLocation();
 
@@ -162,7 +167,10 @@ export default function NearbyServicesScreen() {
     if (!location) return Promise.resolve();
 
     return fetchNearestServices(location.lat, location.lon, signal)
-      .then(setServices)
+      .then((data) => {
+        if (!Array.isArray(data)) return;
+        setServices(data.filter(hasArrivals));
+      })
       .catch((err) => {
         if (err.name !== "AbortError") {
           setError("Failed to load nearby services");
@@ -174,7 +182,15 @@ export default function NearbyServicesScreen() {
     if (!location) return;
 
     let isMounted = true;
-    const controller = new AbortController();
+    const runFetch = () => {
+      const controller = new AbortController();
+
+      fetchServices(controller.signal);
+
+      return controller;
+    };
+
+    let controller = runFetch();
 
     // first load (with spinner)
     setLoading(true);
@@ -188,7 +204,7 @@ export default function NearbyServicesScreen() {
 
     // refresh every 15s
     const interval = setInterval(() => {
-      fetchServices(controller.signal);
+      controller = runFetch();
     }, 15000);
 
     // cleanup
@@ -243,7 +259,9 @@ export default function NearbyServicesScreen() {
       <FlatList
         data={services}
         keyExtractor={(item) =>
-          item.serviceGroup.routeShortName + item.serviceGroup.tripHeadsign
+          item.serviceGroup.routeShortName +
+          item.serviceGroup.tripHeadsign +
+          item.serviceGroup.directionId
         }
         renderItem={({ item }) => (
           <ServiceCard service={item} userLocation={location} />
