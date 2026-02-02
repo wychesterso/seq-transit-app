@@ -158,26 +158,44 @@ export default function NearbyServicesScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!location) return;
+  const fetchServices = (signal?: AbortSignal) => {
+    if (!location) return Promise.resolve();
 
-    const controller = new AbortController();
-
-    setLoading(true);
-    setError(null);
-
-    fetchNearestServices(location.lat, location.lon, controller.signal)
+    return fetchNearestServices(location.lat, location.lon, signal)
       .then(setServices)
       .catch((err) => {
         if (err.name !== "AbortError") {
           setError("Failed to load nearby services");
         }
-      })
-      .finally(() => setLoading(false));
+      });
+  };
+
+  useEffect(() => {
+    if (!location) return;
+
+    let isMounted = true;
+    const controller = new AbortController();
+
+    // first load (with spinner)
+    setLoading(true);
+    setError(null);
+
+    fetchServices(controller.signal).finally(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    });
+
+    // refresh every 15s
+    const interval = setInterval(() => {
+      fetchServices(controller.signal);
+    }, 15000);
 
     // cleanup
     return () => {
+      isMounted = false;
       controller.abort();
+      clearInterval(interval);
     };
   }, [location?.lat, location?.lon]);
 

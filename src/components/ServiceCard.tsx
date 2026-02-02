@@ -8,6 +8,20 @@ interface ServiceCardProps {
   userLocation: { lat: number; lon: number };
 }
 
+function getBrisbaneSecondsSinceMidnight(): number {
+  const now = new Date();
+
+  // convert current time to UTC seconds
+  const utcSeconds =
+    now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
+
+  // UTC+10
+  const brisbaneSeconds = utcSeconds + 10 * 3600;
+
+  // wrap around midnight
+  return brisbaneSeconds % 86400;
+}
+
 export const ServiceCard: React.FC<ServiceCardProps> = ({
   service,
   userLocation,
@@ -26,8 +40,9 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
   // format next 3 arrivals
   const nextArrivals = arrivalsAtNearestStop?.nextThreeArrivals
     ?.map((a: ArrivalResponse) => {
-      const secondsFromNow =
-        a.effectiveArrivalSeconds - Math.floor(Date.now() / 1000);
+      const nowBrisbaneSeconds = getBrisbaneSecondsSinceMidnight();
+      const secondsFromNow = a.effectiveArrivalSeconds - nowBrisbaneSeconds;
+
       return secondsFromNow > 0 ? Math.ceil(secondsFromNow / 60) : 0;
     })
     .slice(0, 3);
@@ -53,16 +68,29 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
       {/* RIGHT */}
       <View style={styles.right}>
         {nextArrivals?.map((min, idx) => {
-          const isFirst = idx === 0 && min > 0;
+          const isFirst = idx === 0;
 
-          return min > 0 ? (
-            <Text
-              key={idx}
-              style={isFirst ? styles.arrivalPrimary : styles.arrival}
-            >
-              {min} min
-            </Text>
-          ) : (
+          if (min > 0) {
+            return (
+              <Text
+                key={idx}
+                style={isFirst ? styles.arrivalPrimary : styles.arrival}
+              >
+                {min} min
+              </Text>
+            );
+          }
+          if (min === 0) {
+            return (
+              <Text
+                key={idx}
+                style={isFirst ? styles.arrivalPrimary : styles.arrival}
+              >
+                Now
+              </Text>
+            );
+          }
+          return (
             <Text key={idx} style={styles.arrivalEmpty}>
               —
             </Text>
@@ -100,7 +128,7 @@ const styles = StyleSheet.create({
 
   /* MIDDLE */
   middle: {
-    flex: 4.5, // 70%
+    flex: 4.25, // 70%
     paddingHorizontal: 8,
   },
   headsign: {
@@ -116,7 +144,7 @@ const styles = StyleSheet.create({
 
   /* RIGHT */
   right: {
-    flex: 1, // 15%
+    flex: 1.25, // 15%
     alignItems: "flex-end",
   },
   arrival: {
