@@ -1,25 +1,12 @@
 import haversine from "haversine-distance";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { ArrivalResponse, BriefServiceResponse } from "../types/index";
+import { ArrivalResponse, ServiceResponse } from "../types/index";
+import { getBrisbaneSecondsSinceMidnight } from "../utils/time";
 
 interface ServiceCardProps {
-  service: BriefServiceResponse;
+  service: ServiceResponse;
   userLocation: { lat: number; lon: number };
-}
-
-function getBrisbaneSecondsSinceMidnight(): number {
-  const now = new Date();
-
-  // convert current time to UTC seconds
-  const utcSeconds =
-    now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
-
-  // UTC+10
-  const brisbaneSeconds = utcSeconds + 10 * 3600;
-
-  // wrap around midnight
-  return brisbaneSeconds % 86400;
 }
 
 export const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -46,6 +33,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
       return secondsFromNow > 0 ? Math.ceil(secondsFromNow / 60) : 0;
     })
     .slice(0, 3);
+  const hasArrivals = Array.isArray(nextArrivals) && nextArrivals.length > 0;
 
   return (
     <View style={styles.card}>
@@ -67,35 +55,39 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
 
       {/* RIGHT */}
       <View style={styles.right}>
-        {nextArrivals?.map((min, idx) => {
-          const isFirst = idx === 0;
+        {hasArrivals ? (
+          nextArrivals?.map((min, idx) => {
+            const isFirst = idx === 0;
 
-          if (min > 0) {
+            if (min > 0) {
+              return (
+                <Text
+                  key={idx}
+                  style={isFirst ? styles.arrivalPrimary : styles.arrival}
+                >
+                  {min} min
+                </Text>
+              );
+            }
+            if (min === 0) {
+              return (
+                <Text
+                  key={idx}
+                  style={isFirst ? styles.arrivalPrimary : styles.arrival}
+                >
+                  - min
+                </Text>
+              );
+            }
             return (
-              <Text
-                key={idx}
-                style={isFirst ? styles.arrivalPrimary : styles.arrival}
-              >
-                {min} min
+              <Text key={idx} style={styles.arrivalEmpty}>
+                —
               </Text>
             );
-          }
-          if (min === 0) {
-            return (
-              <Text
-                key={idx}
-                style={isFirst ? styles.arrivalPrimary : styles.arrival}
-              >
-                Now
-              </Text>
-            );
-          }
-          return (
-            <Text key={idx} style={styles.arrivalEmpty}>
-              —
-            </Text>
-          );
-        })}
+          })
+        ) : (
+          <Text style={styles.arrivalEmpty}>⚠︎</Text>
+        )}
       </View>
     </View>
   );
@@ -106,7 +98,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
-    marginVertical: 0.5,
+    marginVertical: 0.25,
     backgroundColor: "white",
     borderRadius: 0,
     shadowColor: "#000",

@@ -1,17 +1,192 @@
-import { Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  FlatList,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { fetchServicesByPrefix } from "../../src/api/services";
+import { EmptyState } from "../../src/components/EmptyState";
+import { ErrorState } from "../../src/components/ErrorState";
+import { Header } from "../../src/components/Header";
+import { ServiceCardBrief } from "../../src/components/ServiceCardBrief";
+import { Spinner } from "../../src/components/Spinner";
+import { useLocation } from "../../src/hooks/useLocation";
+import { BriefServiceResponse } from "../../src/types";
+
+const NUMBER_ROWS = [
+  ["1", "2", "3"],
+  ["4", "5", "6"],
+  ["7", "8", "9"],
+  ["CLR", "0", "⌫"],
+];
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 export default function SearchServicesScreen() {
+  const insets = useSafeAreaInsets();
+
+  const { location } = useLocation();
+
+  const [query, setQuery] = useState("");
+  const [services, setServices] = useState<BriefServiceResponse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchServices = (query: string, signal?: AbortSignal) => {
+    if (!location) return Promise.resolve();
+
+    return fetchServicesByPrefix(query, location.lat, location.lon, signal)
+      .then((data) => {
+        if (!Array.isArray(data)) return;
+        setServices(data);
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setError("Failed to load services");
+        }
+      });
+  };
+
+  useEffect(() => {
+    if (query.length === 0) {
+      setServices([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    fetchServices(query, controller.signal).finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, [query]);
+
   return (
     <View
+      style={{ paddingTop: insets.top, flex: 1, backgroundColor: "#800000" }}
+    >
+      {/* RESULTS */}
+      <View style={{ flex: 7, backgroundColor: "#eee" }}>
+        <Header title={`Search: ${query || "—"}`} />
+
+        {loading && <Spinner />}
+        {error && <ErrorState message={error} />}
+        {!loading && query && services.length === 0 && (
+          <EmptyState text="No matching services" />
+        )}
+
+        <FlatList
+          data={services}
+          keyExtractor={(item) =>
+            item.serviceGroup.routeShortName +
+            item.serviceGroup.tripHeadsign +
+            item.serviceGroup.directionId
+          }
+          renderItem={({ item }) => <ServiceCardBrief service={item} />}
+        />
+      </View>
+
+      {/* KEYPAD */}
+      <View
+        style={{
+          flex: 3,
+          flexDirection: "row",
+          backgroundColor: "#800000",
+          paddingTop: 6,
+        }}
+      >
+        {/* NUMBERS */}
+        <View style={{ flex: 2 }}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "#eee",
+            }}
+          >
+            {NUMBER_ROWS.map((row, rowIndex) => (
+              <View
+                key={rowIndex}
+                style={{
+                  flex: 1,
+                  flexDirection: "row",
+                }}
+              >
+                {row.map((label) => (
+                  <Key
+                    key={label}
+                    label={label}
+                    onPress={() => {
+                      if (label === "CLR") setQuery("");
+                      else if (label === "⌫") setQuery((q) => q.slice(0, -1));
+                      else setQuery((q) => q + label);
+                    }}
+                  />
+                ))}
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* LETTERS */}
+        <ScrollView style={{ flex: 1, paddingLeft: 6 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              backgroundColor: "#eee",
+            }}
+          >
+            {LETTERS.map((l) => (
+              <LetterKey
+                key={l}
+                label={l}
+                onPress={() => setQuery((q) => q + l)}
+              />
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
+function Key({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
       style={{
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#800000",
-        padding: 16,
+
+        borderWidth: 0.75,
+        borderColor: "#ccc",
       }}
     >
-      <Text style={{ color: "white" }}>Search Services</Text>
-    </View>
+      <Text style={{ fontSize: 28, fontWeight: "600" }}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function LetterKey({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        flexGrow: 1,
+        flexBasis: "33%",
+        padding: 8,
+        alignItems: "center",
+        justifyContent: "center",
+
+        borderWidth: 0.75,
+        borderColor: "#ccc",
+      }}
+    >
+      <Text style={{ fontSize: 22, fontWeight: "600" }}>{label}</Text>
+    </TouchableOpacity>
   );
 }

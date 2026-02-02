@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
-import { FlatList, Text, View } from "react-native";
+import { FlatList, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchNearestServices } from "../../src/api/services";
 import { EmptyState } from "../../src/components/EmptyState";
 import { ErrorState } from "../../src/components/ErrorState";
+import { Header } from "../../src/components/Header";
 import { ServiceCard } from "../../src/components/ServiceCard";
 import { Spinner } from "../../src/components/Spinner";
 import { useLocation } from "../../src/hooks/useLocation";
-import { BriefServiceResponse } from "../../src/types";
+import { ServiceResponse } from "../../src/types";
 
-const MOCK_SERVICES: BriefServiceResponse[] = [
+const MOCK_SERVICES: ServiceResponse[] = [
   {
     routeShortName: "402",
     routeLongName: "402 Long Name",
@@ -151,15 +153,17 @@ const MOCK_SERVICES: BriefServiceResponse[] = [
   },
 ];
 
-function hasArrivals(service: BriefServiceResponse): boolean {
+function hasArrivals(service: ServiceResponse): boolean {
   const arrivals = service.arrivalsAtNearestStop?.nextThreeArrivals;
   return arrivals && arrivals.length > 0;
 }
 
 export default function NearbyServicesScreen() {
+  const insets = useSafeAreaInsets();
+
   const { location, loading: locLoading, error: locError } = useLocation();
 
-  const [services, setServices] = useState<BriefServiceResponse[]>([]);
+  const [services, setServices] = useState<ServiceResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -169,7 +173,7 @@ export default function NearbyServicesScreen() {
     return fetchNearestServices(location.lat, location.lon, signal)
       .then((data) => {
         if (!Array.isArray(data)) return;
-        setServices(data.filter(hasArrivals));
+        setServices(data);
       })
       .catch((err) => {
         if (err.name !== "AbortError") {
@@ -244,17 +248,14 @@ export default function NearbyServicesScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#800000", padding: 1.5 }}>
-      <Text
-        style={{
-          color: "white",
-          fontSize: 24,
-          fontWeight: "600",
-          marginBottom: 12,
-        }}
-      >
-        Nearby Services
-      </Text>
+    <View
+      style={{
+        paddingTop: insets.top,
+        flex: 1,
+        backgroundColor: "#800000",
+      }}
+    >
+      <Header title="Nearby Services" />
 
       <FlatList
         data={services}

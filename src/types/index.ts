@@ -25,7 +25,6 @@ export interface BriefServiceResponse {
   serviceGroup: ServiceGroup;
   routeShortName: string;
   routeLongName: string;
-  arrivalsAtNearestStop: ArrivalsAtStopResponse;
 }
 
 export interface BriefStopResponse {
@@ -48,11 +47,18 @@ export interface FullServiceResponse {
 
 export interface FullStopResponse {
   stopInfo: BriefStopResponse;
-  services: BriefServiceResponse[];
+  services: ServiceResponse[];
 }
 
 export interface ServiceGroup {
   routeShortName: string;
   tripHeadsign: string;
   directionId: number;
+}
+
+export interface ServiceResponse {
+  serviceGroup: ServiceGroup;
+  routeShortName: string;
+  routeLongName: string;
+  arrivalsAtNearestStop: ArrivalsAtStopResponse;
 }
