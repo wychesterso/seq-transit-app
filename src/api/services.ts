@@ -1,4 +1,4 @@
-import { ServiceResponse } from "../types";
+import { BriefServiceResponse, ServiceResponse } from "../types";
 import { API_BASE_URL } from "./config";
 
 export async function fetchNearestServices(
@@ -23,11 +23,24 @@ export async function fetchServicesByPrefix(
   lat: number,
   lon: number,
   signal?: AbortSignal,
-): Promise<ServiceResponse[]> {
+): Promise<BriefServiceResponse[]> {
   const res = await fetch(
     `${API_BASE_URL}/services/prefix?prefix=${prefix}&lat=${lat}&lon=${lon}`,
     { signal },
   );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch services");
+  }
+
+  return res.json();
+}
+
+export async function fetchServicesAtStop(
+  id: string,
+  signal?: AbortSignal,
+): Promise<ServiceResponse[]> {
+  const res = await fetch(`${API_BASE_URL}/services/stop?id=${id}`, { signal });
 
   if (!res.ok) {
     throw new Error("Failed to fetch services");
