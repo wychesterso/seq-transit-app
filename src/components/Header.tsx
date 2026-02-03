@@ -15,12 +15,12 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: "#800000",
+    backgroundColor: "#ef60a3",
     padding: 12,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "white",
+    color: "#242b4c",
   },
 });

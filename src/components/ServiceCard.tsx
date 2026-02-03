@@ -145,11 +145,11 @@ const styles = StyleSheet.create({
   },
   arrivalPrimary: {
     fontSize: 17,
-    fontWeight: "700",
+    fontWeight: "900",
     color: "#00a2ffff",
   },
   arrivalEmpty: {
-    fontSize: 13,
+    fontSize: 20,
     color: "#bbb",
   },
 });

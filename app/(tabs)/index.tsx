@@ -252,13 +252,13 @@ export default function NearbyServicesScreen() {
       style={{
         paddingTop: insets.top,
         flex: 1,
-        backgroundColor: "#800000",
       }}
     >
       <Header title="Nearby Services" />
 
       <FlatList
         data={services}
+        style={{ backgroundColor: "#eee" }}
         keyExtractor={(item) =>
           item.serviceGroup.routeShortName +
           item.serviceGroup.tripHeadsign +

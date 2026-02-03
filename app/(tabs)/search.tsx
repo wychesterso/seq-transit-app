@@ -65,9 +65,7 @@ export default function SearchServicesScreen() {
   }, [query]);
 
   return (
-    <View
-      style={{ paddingTop: insets.top, flex: 1, backgroundColor: "#800000" }}
-    >
+    <View style={{ paddingTop: insets.top, flex: 1 }}>
       {/* RESULTS */}
       <View style={{ flex: 7, backgroundColor: "#eee" }}>
         <Header title={`Search: ${query || "—"}`} />
@@ -94,8 +92,8 @@ export default function SearchServicesScreen() {
         style={{
           flex: 3,
           flexDirection: "row",
-          backgroundColor: "#800000",
-          paddingTop: 6,
+          backgroundColor: "#ef60a3",
+          padding: 4,
         }}
       >
         {/* NUMBERS */}
@@ -131,7 +129,7 @@ export default function SearchServicesScreen() {
         </View>
 
         {/* LETTERS */}
-        <ScrollView style={{ flex: 1, paddingLeft: 6 }}>
+        <ScrollView style={{ flex: 1, paddingLeft: 4 }}>
           <View
             style={{
               flexDirection: "row",
@@ -162,8 +160,9 @@ function Key({ label, onPress }: { label: string; onPress: () => void }) {
         alignItems: "center",
         justifyContent: "center",
 
-        borderWidth: 0.75,
-        borderColor: "#ccc",
+        borderWidth: 2,
+        borderColor: "#ef60a3",
+        backgroundColor: "white",
       }}
     >
       <Text style={{ fontSize: 28, fontWeight: "600" }}>{label}</Text>
@@ -182,8 +181,9 @@ function LetterKey({ label, onPress }: { label: string; onPress: () => void }) {
         alignItems: "center",
         justifyContent: "center",
 
-        borderWidth: 0.75,
-        borderColor: "#ccc",
+        borderWidth: 2,
+        borderColor: "#ef60a3",
+        backgroundColor: "white",
       }}
     >
       <Text style={{ fontSize: 22, fontWeight: "600" }}>{label}</Text>
