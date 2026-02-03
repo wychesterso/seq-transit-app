@@ -1,17 +1,19 @@
-import { Text, View } from "react-native";
+import { Header } from "@/src/components/Header";
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function NearbyStopsScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
     <View
       style={{
+        paddingTop: insets.top,
         flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#800000",
-        padding: 16,
       }}
     >
-      <Text style={{ color: "white" }}>Nearby Stops</Text>
+      <Header title="Nearby Stops" />
+      <View style={{ backgroundColor: "#eee", flex: 7 }}></View>
     </View>
   );
 }
