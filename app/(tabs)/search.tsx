@@ -50,11 +50,6 @@ export default function SearchServicesScreen() {
   };
 
   useEffect(() => {
-    if (query.length === 0) {
-      setServices([]);
-      return;
-    }
-
     const controller = new AbortController();
     setLoading(true);
     setError(null);
