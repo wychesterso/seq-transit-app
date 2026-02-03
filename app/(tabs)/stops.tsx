@@ -101,7 +101,7 @@ export default function NearbyStopsScreen() {
                   }}
                 >
                   <Text style={{ color: selected ? "white" : "#333" }}>
-                    {item.stopName}
+                    {item.stopName + " (" + item.stopId + ")"}
                   </Text>
                 </TouchableOpacity>
               );

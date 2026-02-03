@@ -28,7 +28,14 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
   const nextArrivals = arrivalsAtNearestStop?.nextThreeArrivals
     ?.map((a: ArrivalResponse) => {
       const nowBrisbaneSeconds = getBrisbaneSecondsSinceMidnight();
-      const secondsFromNow = a.effectiveArrivalSeconds - nowBrisbaneSeconds;
+
+      const SECONDS_IN_DAY = 86400;
+      let arrivalSeconds = a.effectiveArrivalSeconds;
+      if (arrivalSeconds - nowBrisbaneSeconds > SECONDS_IN_DAY / 2) {
+        arrivalSeconds -= SECONDS_IN_DAY;
+      }
+
+      const secondsFromNow = arrivalSeconds - nowBrisbaneSeconds;
 
       return secondsFromNow > 0 ? Math.ceil(secondsFromNow / 60) : 0;
     })
