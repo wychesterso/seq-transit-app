@@ -1,4 +1,8 @@
-import { BriefServiceResponse, ServiceResponse } from "../types";
+import {
+  BriefServiceResponse,
+  FullServiceResponse,
+  ServiceResponse,
+} from "../types";
 import { API_BASE_URL } from "./config";
 
 export async function fetchNearestServices(
@@ -44,6 +48,24 @@ export async function fetchServicesAtStop(
 
   if (!res.ok) {
     throw new Error("Failed to fetch services");
+  }
+
+  return res.json();
+}
+
+export async function fetchFullServiceInfo(
+  routeShortName: string,
+  tripHeadsign: string,
+  directionId: number,
+  signal?: AbortSignal,
+): Promise<FullServiceResponse> {
+  const res = await fetch(
+    `${API_BASE_URL}/services/info?route=${routeShortName}&headsign=${tripHeadsign}&dir=${directionId}`,
+    { signal },
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch service info");
   }
 
   return res.json();
