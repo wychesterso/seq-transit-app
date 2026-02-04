@@ -1,15 +1,17 @@
 import { fetchFullServiceInfo } from "@/src/api/services";
 import { ErrorState } from "@/src/components/ErrorState";
-import { Header } from "@/src/components/Header";
 import { Spinner } from "@/src/components/Spinner";
+import { StopCard } from "@/src/components/StopCard";
 import { FullServiceResponse } from "@/src/types";
-import { useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ServiceDetailsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const { routeShortName, tripHeadsign, directionId } = useLocalSearchParams<{
     routeShortName: string;
@@ -51,21 +53,50 @@ export default function ServiceDetailsScreen() {
         flex: 1,
       }}
     >
-      <Header title={`${routeShortName || "—"} ${tripHeadsign || "—"}`} />
       <View
         style={{
-          paddingBottom: 8,
-          paddingLeft: 12,
-          paddingRight: 12,
           backgroundColor: "#ef60a3",
+          padding: 12,
+          flexDirection: "row",
+          alignItems: "center",
         }}
       >
-        <Text style={{ fontSize: 14, fontWeight: "600" }}>
-          {service?.routeLongName || "—"}
-        </Text>
-      </View>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ paddingLeft: 8, paddingRight: 20 }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#242b4c" />
+        </TouchableOpacity>
 
-      <View style={{ backgroundColor: "#eee", flex: 1 }}></View>
+        <View>
+          <Text
+            style={{
+              fontSize: 24,
+              fontWeight: "700",
+              color: "#242b4c",
+            }}
+          >
+            {routeShortName || "—"}
+          </Text>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: "#242b4c",
+            }}
+          >
+            to {tripHeadsign || "—"}
+          </Text>
+        </View>
+      </View>
+      <View style={{ backgroundColor: "#eee", flex: 1 }}>
+        <FlatList
+          data={service.arrivalsAtStops}
+          style={{ backgroundColor: "#eee" }}
+          keyExtractor={(item) => item.stop.stopId}
+          renderItem={({ item }) => <StopCard arrival={item} />}
+        />
+      </View>
     </View>
   );
 }

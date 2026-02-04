@@ -3,7 +3,7 @@ import haversine from "haversine-distance";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ArrivalResponse, ServiceResponse } from "../types/index";
-import { getBrisbaneSecondsSinceMidnight } from "../utils/time";
+import { getMinutesUntilArrival } from "../utils/time";
 
 interface ServiceCardProps {
   service: ServiceResponse;
@@ -26,28 +26,20 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
     : null;
 
   // format next 3 arrivals
-  const nextArrivals = arrivalsAtNearestStop?.nextThreeArrivals
+  const nextDepartures = arrivalsAtNearestStop?.nextThreeArrivals
     ?.map((a: ArrivalResponse) => {
-      const nowBrisbaneSeconds = getBrisbaneSecondsSinceMidnight();
-
-      const SECONDS_IN_DAY = 86400;
-      let arrivalSeconds = a.effectiveArrivalSeconds;
-      if (arrivalSeconds - nowBrisbaneSeconds > SECONDS_IN_DAY / 2) {
-        arrivalSeconds -= SECONDS_IN_DAY;
-      }
-
-      const secondsFromNow = arrivalSeconds - nowBrisbaneSeconds;
-
-      return secondsFromNow > 0 ? Math.ceil(secondsFromNow / 60) : 0;
+      return getMinutesUntilArrival(a.effectiveDepartureSeconds);
     })
     .slice(0, 3);
-  const hasArrivals = Array.isArray(nextArrivals) && nextArrivals.length > 0;
+  const hasDepartures =
+    Array.isArray(nextDepartures) && nextDepartures.length > 0;
 
   return (
     <Pressable
       onPress={() =>
         router.push({
-          pathname: "/service/[routeShortName]/[directionId]/[tripHeadsign]",
+          pathname:
+            "/(tabs)/details/[routeShortName]/[directionId]/[tripHeadsign]",
           params: {
             routeShortName: service.routeShortName,
             directionId: serviceGroup.directionId,
@@ -75,8 +67,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
 
         {/* RIGHT */}
         <View style={styles.right}>
-          {hasArrivals ? (
-            nextArrivals?.map((min, idx) => {
+          {hasDepartures ? (
+            nextDepartures?.map((min, idx) => {
               const isFirst = idx === 0;
 
               if (min > 0) {
