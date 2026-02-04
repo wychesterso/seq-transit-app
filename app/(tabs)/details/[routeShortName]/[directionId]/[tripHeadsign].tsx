@@ -36,6 +36,8 @@ export default function ServiceDetailsScreen() {
   };
 
   useEffect(() => {
+    setService(null);
+
     let isMounted = true;
     const runFetch = () => {
       const controller = new AbortController();

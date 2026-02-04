@@ -1,5 +1,16 @@
-import { Stack } from "expo-router";
+import { Tabs } from "expo-router";
 
 export default function DetailsLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+
+        tabBarStyle: {
+          borderTopWidth: 0,
+          height: 0,
+        },
+      }}
+    ></Tabs>
+  );
 }

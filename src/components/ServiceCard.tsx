@@ -37,7 +37,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
   return (
     <Pressable
       onPress={() =>
-        router.push({
+        router.replace({
           pathname:
             "/(tabs)/details/[routeShortName]/[directionId]/[tripHeadsign]",
           params: {
