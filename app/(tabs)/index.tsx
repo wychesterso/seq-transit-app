@@ -71,34 +71,6 @@ export default function NearbyServicesScreen() {
     };
   }, [location?.lat, location?.lon]);
 
-  // render logic
-  if (locLoading || loading) {
-    return <Spinner />;
-  }
-
-  if (locError) {
-    return <ErrorState message={locError} />;
-  }
-
-  if (error) {
-    return (
-      <ErrorState
-        message={error}
-        onRetry={() => {
-          /* TODO: retry logic */
-        }}
-      />
-    );
-  }
-
-  if (!location) {
-    return <ErrorState message="Location unavailable" />;
-  }
-
-  if (services.length === 0) {
-    return <EmptyState text="No nearby services" />;
-  }
-
   return (
     <View
       style={{
@@ -107,6 +79,28 @@ export default function NearbyServicesScreen() {
       }}
     >
       <Header title="Nearby Services" />
+
+      {locLoading || (loading && <Spinner />)}
+      {locError && (
+        <ErrorState
+          message={locError}
+          onRetry={() => {
+            /* TODO: retry logic */
+          }}
+        />
+      )}
+      {error && (
+        <ErrorState
+          message={error}
+          onRetry={() => {
+            /* TODO: retry logic */
+          }}
+        />
+      )}
+      {!location && <ErrorState message="Location unavailable" />}
+      {!loading && services.length === 0 && (
+        <EmptyState text="No nearby services" />
+      )}
 
       <FlatList
         data={services}

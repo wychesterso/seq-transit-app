@@ -85,10 +85,6 @@ export default function NearbyStopsScreen() {
     return () => controller.abort();
   }, [selectedStopId]);
 
-  if (locLoading || loadingStops) return <Spinner />;
-  if (locError) return <ErrorState message={locError} />;
-  if (error) return <ErrorState message={error} />;
-
   return (
     <View style={{ paddingTop: insets.top, flex: 1 }}>
       <Header title="Nearby Stops" />
@@ -96,6 +92,8 @@ export default function NearbyStopsScreen() {
       <View style={{ backgroundColor: "#eee", flex: 1 }}>
         {/* STOP TABS */}
         <View style={{ height: 40 }}>
+          {locError && <ErrorState message={locError} />}
+
           <FlatList
             data={stops}
             horizontal
@@ -126,9 +124,10 @@ export default function NearbyStopsScreen() {
         </View>
 
         {/* SERVICES */}
-        {loadingServices && <Spinner />}
+        {(loadingStops || loadingServices) && <Spinner />}
+        {error && <ErrorState message={error} />}
 
-        {!loadingServices && services.length === 0 && (
+        {!loadingStops && !loadingServices && services.length === 0 && (
           <EmptyState text="No services at this stop" />
         )}
 

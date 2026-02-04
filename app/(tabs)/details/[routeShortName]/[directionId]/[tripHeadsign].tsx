@@ -72,10 +72,6 @@ export default function ServiceDetailsScreen() {
     };
   }, [routeShortName, tripHeadsign, dir]);
 
-  if (loading) return <Spinner />;
-  if (error) return <ErrorState message={error} />;
-  if (!service) return null;
-
   return (
     <View
       style={{
@@ -120,12 +116,20 @@ export default function ServiceDetailsScreen() {
         </View>
       </View>
       <View style={{ backgroundColor: "#eee", flex: 1 }}>
-        <FlatList
-          data={service.arrivalsAtStops}
-          style={{ backgroundColor: "#eee" }}
-          keyExtractor={(item) => item.stop.stopId}
-          renderItem={({ item }) => <StopCard arrival={item} />}
-        />
+        {loading && <Spinner />}
+        {error && <ErrorState message={error} />}
+        {!loading && !service && (
+          <ErrorState message="No service data available" />
+        )}
+
+        {service && (
+          <FlatList
+            data={service.arrivalsAtStops}
+            style={{ backgroundColor: "#eee" }}
+            keyExtractor={(item) => item.stop.stopId}
+            renderItem={({ item }) => <StopCard arrival={item} />}
+          />
+        )}
       </View>
     </View>
   );
