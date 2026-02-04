@@ -1,5 +1,6 @@
+import { router } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BriefServiceResponse } from "../types/index";
 
 interface ServiceCardBriefProps {
@@ -12,18 +13,32 @@ export const ServiceCardBrief: React.FC<ServiceCardBriefProps> = ({
   const { serviceGroup, routeShortName, routeLongName } = service;
 
   return (
-    <View style={styles.card}>
-      {/* LEFT */}
-      <View style={styles.left}>
-        <Text style={styles.route}>{routeShortName}</Text>
-      </View>
+    <Pressable
+      onPress={() =>
+        router.push({
+          pathname:
+            "/(tabs)/details/[routeShortName]/[directionId]/[tripHeadsign]",
+          params: {
+            routeShortName: service.routeShortName,
+            directionId: serviceGroup.directionId,
+            tripHeadsign: serviceGroup.tripHeadsign,
+          },
+        })
+      }
+    >
+      <View style={styles.card}>
+        {/* LEFT */}
+        <View style={styles.left}>
+          <Text style={styles.route}>{routeShortName}</Text>
+        </View>
 
-      {/* RIGHT */}
-      <View style={styles.right}>
-        <Text style={styles.headsign}>{serviceGroup.tripHeadsign}</Text>
-        <Text style={styles.stop}>{routeLongName}</Text>
+        {/* RIGHT */}
+        <View style={styles.right}>
+          <Text style={styles.headsign}>{serviceGroup.tripHeadsign}</Text>
+          <Text style={styles.stop}>{routeLongName}</Text>
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 

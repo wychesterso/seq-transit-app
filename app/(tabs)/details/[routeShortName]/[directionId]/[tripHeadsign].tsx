@@ -25,21 +25,49 @@ export default function ServiceDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-
-    fetchFullServiceInfo(routeShortName, tripHeadsign, dir, controller.signal)
+  const fetchServiceInfo = (signal?: AbortSignal) => {
+    return fetchFullServiceInfo(routeShortName, tripHeadsign, dir, signal)
       .then(setService)
       .catch((err) => {
         if (err.name !== "AbortError") {
           setError("Failed to load service info");
         }
-      })
-      .finally(() => setLoading(false));
+      });
+  };
 
-    return () => controller.abort();
+  useEffect(() => {
+    let isMounted = true;
+    const runFetch = () => {
+      const controller = new AbortController();
+
+      fetchServiceInfo(controller.signal);
+
+      return controller;
+    };
+
+    let controller = runFetch();
+
+    // first load
+    setLoading(true);
+    setError(null);
+
+    fetchServiceInfo(controller.signal).finally(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    });
+
+    // refresh every 15s
+    const interval = setInterval(() => {
+      controller = runFetch();
+    }, 15000);
+
+    // cleanup
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearInterval(interval);
+    };
   }, [routeShortName, tripHeadsign, dir]);
 
   if (loading) return <Spinner />;
