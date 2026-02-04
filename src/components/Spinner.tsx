@@ -7,6 +7,7 @@ export function Spinner() {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: "#eee",
       }}
     >
       <ActivityIndicator size="large" />

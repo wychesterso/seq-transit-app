@@ -62,3 +62,13 @@ export interface ServiceResponse {
   routeLongName: string;
   arrivalsAtNearestStop: ArrivalsAtStopResponse;
 }
+
+export type RootStackParamList = {
+  NearbyServices: undefined;
+  NearbyStops: undefined;
+  ServiceDetails: {
+    routeShortName: string;
+    tripHeadsign: string;
+    directionId: number;
+  };
+};

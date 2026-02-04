@@ -1,6 +1,7 @@
+import { router } from "expo-router";
 import haversine from "haversine-distance";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { ArrivalResponse, ServiceResponse } from "../types/index";
 import { getBrisbaneSecondsSinceMidnight } from "../utils/time";
 
@@ -43,60 +44,73 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
   const hasArrivals = Array.isArray(nextArrivals) && nextArrivals.length > 0;
 
   return (
-    <View style={styles.card}>
-      {/* LEFT */}
-      <View style={styles.left}>
-        <Text style={styles.route}>{routeShortName}</Text>
-      </View>
+    <Pressable
+      onPress={() =>
+        router.push({
+          pathname: "/service/[routeShortName]/[directionId]/[tripHeadsign]",
+          params: {
+            routeShortName: service.routeShortName,
+            directionId: serviceGroup.directionId,
+            tripHeadsign: serviceGroup.tripHeadsign,
+          },
+        })
+      }
+    >
+      <View style={styles.card}>
+        {/* LEFT */}
+        <View style={styles.left}>
+          <Text style={styles.route}>{routeShortName}</Text>
+        </View>
 
-      {/* MIDDLE */}
-      <View style={styles.middle}>
-        <Text style={styles.headsign}>{serviceGroup.tripHeadsign}</Text>
-        <Text style={styles.stop}>
-          {stop?.stopName}
-          {distanceMeters != null
-            ? ` · ${(distanceMeters / 1000).toFixed(2)} km`
-            : ""}
-        </Text>
-      </View>
+        {/* MIDDLE */}
+        <View style={styles.middle}>
+          <Text style={styles.headsign}>{serviceGroup.tripHeadsign}</Text>
+          <Text style={styles.stop}>
+            {stop?.stopName}
+            {distanceMeters != null
+              ? ` · ${(distanceMeters / 1000).toFixed(2)} km`
+              : ""}
+          </Text>
+        </View>
 
-      {/* RIGHT */}
-      <View style={styles.right}>
-        {hasArrivals ? (
-          nextArrivals?.map((min, idx) => {
-            const isFirst = idx === 0;
+        {/* RIGHT */}
+        <View style={styles.right}>
+          {hasArrivals ? (
+            nextArrivals?.map((min, idx) => {
+              const isFirst = idx === 0;
 
-            if (min > 0) {
+              if (min > 0) {
+                return (
+                  <Text
+                    key={idx}
+                    style={isFirst ? styles.arrivalPrimary : styles.arrival}
+                  >
+                    {min} min
+                  </Text>
+                );
+              }
+              if (min === 0) {
+                return (
+                  <Text
+                    key={idx}
+                    style={isFirst ? styles.arrivalPrimary : styles.arrival}
+                  >
+                    - min
+                  </Text>
+                );
+              }
               return (
-                <Text
-                  key={idx}
-                  style={isFirst ? styles.arrivalPrimary : styles.arrival}
-                >
-                  {min} min
+                <Text key={idx} style={styles.arrivalEmpty}>
+                  —
                 </Text>
               );
-            }
-            if (min === 0) {
-              return (
-                <Text
-                  key={idx}
-                  style={isFirst ? styles.arrivalPrimary : styles.arrival}
-                >
-                  - min
-                </Text>
-              );
-            }
-            return (
-              <Text key={idx} style={styles.arrivalEmpty}>
-                —
-              </Text>
-            );
-          })
-        ) : (
-          <Text style={styles.arrivalEmpty}>⚠︎</Text>
-        )}
+            })
+          ) : (
+            <Text style={styles.arrivalEmpty}>⚠︎</Text>
+          )}
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
