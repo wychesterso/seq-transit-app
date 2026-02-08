@@ -15,7 +15,6 @@ export default function ServiceDetailsScreen() {
   const router = useRouter();
 
   const { location, loading: locLoading, error: locError } = useLocation();
-  const listRef = useRef<FlatList>(null);
 
   const { routeShortName, tripHeadsign, directionId } = useLocalSearchParams<{
     routeShortName: string;
@@ -27,6 +26,9 @@ export default function ServiceDetailsScreen() {
   const [service, setService] = useState<FullServiceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const listRef = useRef<FlatList>(null);
+  const hasScrolledRef = useRef(false);
 
   const nearestIndex = useMemo(() => {
     if (!service?.adjacentStop) return -1;
@@ -93,7 +95,9 @@ export default function ServiceDetailsScreen() {
   }, [routeShortName, tripHeadsign, dir, location?.lat, location?.lon]);
 
   useEffect(() => {
-    if (nearestIndex >= 0) {
+    if (!hasScrolledRef.current && nearestIndex >= 0) {
+      hasScrolledRef.current = true;
+
       const timeout = setTimeout(() => {
         listRef.current?.scrollToIndex({
           index: nearestIndex,

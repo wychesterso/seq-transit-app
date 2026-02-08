@@ -7,7 +7,7 @@ export async function fetchNearestStops(
   signal?: AbortSignal,
 ): Promise<BriefStopResponse[]> {
   const res = await fetch(
-    `${API_BASE_URL}/stops/nearest?lat=${lat}&lon=${lon}`,
+    `${API_BASE_URL}/stops/nearest?lat=${lat}&lon=${lon}&radius=LARGE`,
     { signal },
   );
 

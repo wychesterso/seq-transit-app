@@ -11,7 +11,7 @@ export async function fetchNearestServices(
   signal?: AbortSignal,
 ): Promise<ServiceResponse[]> {
   const res = await fetch(
-    `${API_BASE_URL}/services/nearest?lat=${lat}&lon=${lon}`,
+    `${API_BASE_URL}/services/nearest?lat=${lat}&lon=${lon}&radius=XL`,
     { signal },
   );
 

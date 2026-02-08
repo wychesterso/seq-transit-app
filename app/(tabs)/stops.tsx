@@ -35,25 +35,25 @@ export default function NearbyStopsScreen() {
 
     fetchNearestStops(location.lat, location.lon, controller.signal)
       .then(async (data) => {
-        const results: BriefStopResponse[] = [];
+        // const results: BriefStopResponse[] = [];
 
-        for (const stop of data) {
-          try {
-            const services = await fetchServicesAtStop(
-              stop.stopId,
-              controller.signal,
-            );
+        // for (const stop of data) {
+        //   try {
+        //     const services = await fetchServicesAtStop(
+        //       stop.stopId,
+        //       controller.signal,
+        //     );
 
-            if (services.length > 0) {
-              results.push(stop);
-            }
-          } catch {
-            // ignore stops that fail
-          }
-        }
-        setStops(results);
-        if (results.length > 0) {
-          setSelectedStopId(results[0].stopId); // select first stop by default
+        //     if (services.length > 0) {
+        //       results.push(stop);
+        //     }
+        //   } catch {
+        //     // ignore stops that fail
+        //   }
+        // }
+        setStops(data);
+        if (data.length > 0) {
+          setSelectedStopId(data[0].stopId); // select first stop by default
         }
       })
       .catch((err) => {
