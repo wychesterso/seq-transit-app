@@ -57,10 +57,12 @@ export async function fetchFullServiceInfo(
   routeShortName: string,
   tripHeadsign: string,
   directionId: number,
+  lat: number,
+  lon: number,
   signal?: AbortSignal,
 ): Promise<FullServiceResponse> {
   const res = await fetch(
-    `${API_BASE_URL}/services/info?route=${routeShortName}&headsign=${tripHeadsign}&dir=${directionId}`,
+    `${API_BASE_URL}/services/info?route=${routeShortName}&headsign=${tripHeadsign}&dir=${directionId}&lat=${lat}&lon=${lon}`,
     { signal },
   );
 

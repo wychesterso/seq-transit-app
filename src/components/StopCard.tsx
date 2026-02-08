@@ -5,9 +5,13 @@ import { getMinutesUntilArrival } from "../utils/time";
 
 interface StopCardProps {
   arrival: ArrivalsAtStopResponse;
+  defaultExpanded?: boolean;
 }
 
-export const StopCard: React.FC<StopCardProps> = ({ arrival }) => {
+export const StopCard: React.FC<StopCardProps> = ({
+  arrival,
+  defaultExpanded = false,
+}) => {
   const { stop, stopSequence, isFirstStop, nextThreeArrivals } = arrival;
   const stopName = stop.stopName;
 
@@ -23,7 +27,7 @@ export const StopCard: React.FC<StopCardProps> = ({ arrival }) => {
       : a.scheduledArrivalSeconds;
   };
 
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
 
   // format next 3 arrivals
   const nextArrivals = nextThreeArrivals

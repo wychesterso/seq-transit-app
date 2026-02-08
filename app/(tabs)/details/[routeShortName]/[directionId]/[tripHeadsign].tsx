@@ -2,10 +2,11 @@ import { fetchFullServiceInfo } from "@/src/api/services";
 import { ErrorState } from "@/src/components/ErrorState";
 import { Spinner } from "@/src/components/Spinner";
 import { StopCard } from "@/src/components/StopCard";
+import { useLocation } from "@/src/hooks/useLocation";
 import { FullServiceResponse } from "@/src/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -13,20 +14,39 @@ export default function ServiceDetailsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
+  const { location, loading: locLoading, error: locError } = useLocation();
+  const listRef = useRef<FlatList>(null);
+
   const { routeShortName, tripHeadsign, directionId } = useLocalSearchParams<{
     routeShortName: string;
     tripHeadsign: string;
     directionId: string;
   }>();
-
   const dir = Number(directionId);
 
   const [service, setService] = useState<FullServiceResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const nearestIndex = useMemo(() => {
+    if (!service?.adjacentStop) return -1;
+
+    return service.arrivalsAtStops.findIndex(
+      (s) => s.stop.stopId === service.adjacentStop.stopId,
+    );
+  }, [service]);
+
   const fetchServiceInfo = (signal?: AbortSignal) => {
-    return fetchFullServiceInfo(routeShortName, tripHeadsign, dir, signal)
+    if (!location) return Promise.resolve();
+
+    return fetchFullServiceInfo(
+      routeShortName,
+      tripHeadsign,
+      dir,
+      location.lat,
+      location.lon,
+      signal,
+    )
       .then(setService)
       .catch((err) => {
         if (err.name !== "AbortError") {
@@ -70,7 +90,21 @@ export default function ServiceDetailsScreen() {
       controller.abort();
       clearInterval(interval);
     };
-  }, [routeShortName, tripHeadsign, dir]);
+  }, [routeShortName, tripHeadsign, dir, location?.lat, location?.lon]);
+
+  useEffect(() => {
+    if (nearestIndex >= 0) {
+      const timeout = setTimeout(() => {
+        listRef.current?.scrollToIndex({
+          index: nearestIndex,
+          animated: true,
+          viewPosition: 0.3,
+        });
+      }, 100);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [nearestIndex]);
 
   return (
     <View
@@ -127,7 +161,20 @@ export default function ServiceDetailsScreen() {
             data={service.arrivalsAtStops}
             style={{ backgroundColor: "#eee" }}
             keyExtractor={(item) => item.stop.stopId}
-            renderItem={({ item }) => <StopCard arrival={item} />}
+            onScrollToIndexFailed={(info) => {
+              setTimeout(() => {
+                listRef.current?.scrollToIndex({
+                  index: info.index,
+                  animated: true,
+                });
+              }, 300);
+            }}
+            renderItem={({ item, index }) => (
+              <StopCard
+                arrival={item}
+                defaultExpanded={index === nearestIndex}
+              />
+            )}
           />
         )}
       </View>

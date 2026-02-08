@@ -18,6 +18,8 @@ export interface ArrivalResponse {
 export interface ArrivalsAtStopResponse {
   stop: BriefStopResponse;
   stopSequence: number;
+  isFirstStop: boolean;
+  isLastStop: boolean;
   nextThreeArrivals: ArrivalResponse[];
 }
 
@@ -42,6 +44,7 @@ export interface FullServiceResponse {
   routeLongName: string;
   routeColor: string;
   routeTextColor: string;
+  adjacentStop: BriefStopResponse;
   arrivalsAtStops: ArrivalsAtStopResponse[];
 }
 
@@ -62,13 +65,3 @@ export interface ServiceResponse {
   routeLongName: string;
   arrivalsAtNearestStop: ArrivalsAtStopResponse;
 }
-
-export type RootStackParamList = {
-  NearbyServices: undefined;
-  NearbyStops: undefined;
-  ServiceDetails: {
-    routeShortName: string;
-    tripHeadsign: string;
-    directionId: number;
-  };
-};
