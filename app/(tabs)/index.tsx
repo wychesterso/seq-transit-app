@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FlatList, View } from "react-native";
+import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchNearestServices } from "../../src/api/services";
 import { EmptyState } from "../../src/components/EmptyState";
@@ -16,13 +16,16 @@ export default function NearbyServicesScreen() {
   const { location, loading: locLoading, error: locError } = useLocation();
 
   const [services, setServices] = useState<ServiceResponse[]>([]);
+  const [radius, setRadius] = useState<"SMALL" | "MEDIUM" | "LARGE" | "XL">(
+    "LARGE",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchServices = (signal?: AbortSignal) => {
     if (!location) return Promise.resolve();
 
-    return fetchNearestServices(location.lat, location.lon, signal)
+    return fetchNearestServices(location.lat, location.lon, radius, signal)
       .then((data) => {
         if (!Array.isArray(data)) return;
         setServices(data);
@@ -38,38 +41,39 @@ export default function NearbyServicesScreen() {
     if (!location) return;
 
     let isMounted = true;
-    const runFetch = () => {
-      const controller = new AbortController();
+    let controller: AbortController;
 
-      fetchServices(controller.signal);
+    const runFetch = (showSpinner = false) => {
+      controller?.abort();
+      controller = new AbortController();
 
-      return controller;
+      if (!showSpinner) {
+        setLoading(true);
+        setError(null);
+      }
+
+      fetchServices(controller.signal).finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
     };
 
-    let controller = runFetch();
-
     // first load (with spinner)
-    setLoading(true);
-    setError(null);
-
-    fetchServices(controller.signal).finally(() => {
-      if (isMounted) {
-        setLoading(false);
-      }
-    });
+    runFetch(true);
 
     // refresh every 15s
     const interval = setInterval(() => {
-      controller = runFetch();
+      runFetch(false);
     }, 15000);
 
     // cleanup
     return () => {
       isMounted = false;
-      controller.abort();
+      controller?.abort();
       clearInterval(interval);
     };
-  }, [location?.lat, location?.lon]);
+  }, [location?.lat, location?.lon, radius]);
 
   return (
     <View
@@ -79,6 +83,41 @@ export default function NearbyServicesScreen() {
       }}
     >
       <Header title="Nearby Services" />
+
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-around",
+          paddingVertical: 4,
+          backgroundColor: "#ef60a3",
+        }}
+      >
+        {[
+          { label: "100m", value: "SMALL" },
+          { label: "250m", value: "MEDIUM" },
+          { label: "500m", value: "LARGE" },
+          { label: "1000m", value: "XL" },
+        ].map((r) => {
+          const selected = radius === r.value;
+
+          return (
+            <TouchableOpacity
+              key={r.value}
+              onPress={() => setRadius(r.value as any)}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 20,
+                backgroundColor: "#d04e8b",
+              }}
+            >
+              <Text style={{ color: selected ? "white" : "#333" }}>
+                {r.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
       {locLoading || (loading && <Spinner />)}
       {locError && (

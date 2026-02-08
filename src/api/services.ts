@@ -8,10 +8,11 @@ import { API_BASE_URL } from "./config";
 export async function fetchNearestServices(
   lat: number,
   lon: number,
+  radius: "SMALL" | "MEDIUM" | "LARGE" | "XL",
   signal?: AbortSignal,
 ): Promise<ServiceResponse[]> {
   const res = await fetch(
-    `${API_BASE_URL}/services/nearest?lat=${lat}&lon=${lon}&radius=XL`,
+    `${API_BASE_URL}/services/nearest?lat=${lat}&lon=${lon}&radius=${radius}`,
     { signal },
   );
 
