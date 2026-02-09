@@ -51,7 +51,8 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
     >
       {stops.map((s) => (
         <Marker
-          key={s.stop.stopId}
+          key={`${s.stop.stopId}-${focusedStopId === s.stop.stopId}`}
+          pinColor={s.stop.stopId === focusedStopId ? "tomato" : "wheat"}
           coordinate={{
             latitude: s.stop.stopLat,
             longitude: s.stop.stopLon,
