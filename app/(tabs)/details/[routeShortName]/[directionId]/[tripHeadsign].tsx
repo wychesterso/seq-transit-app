@@ -31,6 +31,7 @@ export default function ServiceDetailsScreen() {
 
   const listRef = useRef<FlatList>(null);
   const hasScrolledRef = useRef(false);
+  const prevFocusedStopIdRef = useRef<string | null>(null);
 
   const nearestIndex = useMemo(() => {
     if (!service?.adjacentStop) return -1;
@@ -106,6 +107,9 @@ export default function ServiceDetailsScreen() {
   // scroll to the currently focused stop whenever it changes
   useEffect(() => {
     if (!listReady || !focusedStopId) return;
+
+    if (prevFocusedStopIdRef.current === focusedStopId) return;
+    prevFocusedStopIdRef.current = focusedStopId;
 
     const index = service?.arrivalsAtStops.findIndex(
       (s) => s.stop.stopId === focusedStopId,

@@ -20,9 +20,10 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
   const prevFocusedStopRef = useRef<string | null>(null); // track previously focused stop
 
   useEffect(() => {
-    if (!mapReady) return;
-    if (!focusedStopId) return;
+    if (!mapReady || !focusedStopId) return;
+
     if (prevFocusedStopRef.current === focusedStopId) return;
+    prevFocusedStopRef.current = focusedStopId;
 
     const stop = stops.find((s) => s.stop.stopId === focusedStopId)?.stop;
     if (!stop) return;
@@ -34,8 +35,6 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
       },
       zoom: 16,
     });
-
-    prevFocusedStopRef.current = focusedStopId;
   }, [focusedStopId, mapReady, stops]);
 
   if (stops.length === 0) return null;
