@@ -1,10 +1,16 @@
-import { Tabs } from "expo-router";
-import React from "react";
-
 import { HapticTab } from "@/components/haptic-tab";
 import { Ionicons } from "@expo/vector-icons";
+import * as NavigationBar from "expo-navigation-bar";
+import { Tabs } from "expo-router";
+import React, { useEffect } from "react";
 
 export default function TabLayout() {
+  useEffect(() => {
+    NavigationBar.setPositionAsync("relative");
+    NavigationBar.setBackgroundColorAsync("#ef60a3");
+    NavigationBar.setButtonStyleAsync("dark");
+  }, []);
+
   return (
     <Tabs
       screenOptions={{

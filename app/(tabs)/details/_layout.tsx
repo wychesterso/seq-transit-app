@@ -12,6 +12,7 @@ export default function DetailsLayout() {
           borderTopWidth: 0,
           height: 0,
           opacity: 0,
+          display: "none",
         },
 
         headerShown: false,
