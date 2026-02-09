@@ -179,6 +179,10 @@ export default function ServiceDetailsScreen() {
             stops={service.arrivalsAtStops}
             focusedStopId={focusedStopId}
             onFocusStop={(stopId) => setFocusedStopId(stopId)}
+            shape={service.shape}
+            routeColor={
+              service.routeColor ? `#${service.routeColor}` : "#ef60a3"
+            }
           />
         )}
 

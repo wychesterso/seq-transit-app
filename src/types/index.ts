@@ -39,6 +39,11 @@ export interface BriefStopResponse {
   zoneId: string;
 }
 
+export interface CoordinatePoint {
+  lat: number;
+  lon: number;
+}
+
 export interface FullServiceResponse {
   serviceGroup: ServiceGroup;
   routeShortName: string;
@@ -46,6 +51,7 @@ export interface FullServiceResponse {
   routeType: number;
   routeColor: string;
   routeTextColor: string;
+  shape: CoordinatePoint[];
   adjacentStop: BriefStopResponse;
   arrivalsAtStops: ArrivalsAtStopResponse[];
 }

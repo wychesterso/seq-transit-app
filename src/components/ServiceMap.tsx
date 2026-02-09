@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import MapView, { Marker } from "react-native-maps";
-import { ArrivalsAtStopResponse } from "../types";
+import MapView, { Marker, Polyline } from "react-native-maps";
+import { ArrivalsAtStopResponse, CoordinatePoint } from "../types";
 
 interface ServiceMapProps {
   stops: ArrivalsAtStopResponse[];
   focusedStopId: string | null;
   onFocusStop?: (stopId: string) => void;
+  shape?: CoordinatePoint[];
+  routeColor?: string;
 }
 
 export const ServiceMap: React.FC<ServiceMapProps> = ({
   stops,
   focusedStopId,
   onFocusStop,
+  shape,
+  routeColor,
 }) => {
   const mapRef = useRef<MapView>(null);
   const [mapReady, setMapReady] = useState(false);
@@ -49,6 +53,16 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
         longitudeDelta: 0.01,
       }}
     >
+      {shape && shape.length > 0 && (
+        <Polyline
+          coordinates={shape.map((p) => ({
+            latitude: p.lat,
+            longitude: p.lon,
+          }))}
+          strokeWidth={8}
+          strokeColor={routeColor || "#000"}
+        />
+      )}
       {stops.map((s) => (
         <Marker
           key={`${s.stop.stopId}-${focusedStopId === s.stop.stopId}`}
