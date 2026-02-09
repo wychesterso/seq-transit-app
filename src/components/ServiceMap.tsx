@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import MapView, { Marker, UrlTile } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 import { ArrivalsAtStopResponse } from "../types";
-
-const MAPTILER_KEY = process.env.EXPO_PUBLIC_MAPTILER_KEY!;
 
 interface ServiceMapProps {
   stops: ArrivalsAtStopResponse[];
@@ -51,12 +49,6 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
         longitudeDelta: 0.01,
       }}
     >
-      <UrlTile
-        urlTemplate={`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`}
-        maximumZ={19}
-        flipY={false}
-      />
-
       {stops.map((s) => (
         <Marker
           key={s.stop.stopId}
