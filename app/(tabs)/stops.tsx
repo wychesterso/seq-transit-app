@@ -137,7 +137,8 @@ export default function NearbyStopsScreen() {
           keyExtractor={(item) =>
             item.serviceGroup.routeShortName +
             item.serviceGroup.tripHeadsign +
-            item.serviceGroup.directionId
+            item.serviceGroup.directionId +
+            item.routeLongName
           }
           renderItem={({ item }) => (
             <ServiceCard service={item} userLocation={location!} />

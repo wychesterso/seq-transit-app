@@ -4,7 +4,7 @@ export interface UserLocation {
 }
 
 export function useLocation() {
-  const location = { lat: -27.497445, lon: 153.011158 };
+  const location = { lat: -27.473911, lon: 153.018305 };
   const loading = false;
   const error = null;
 

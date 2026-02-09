@@ -1,5 +1,6 @@
+import { commonStyles } from "@/src/styles/commonStyles";
 import { useEffect, useState } from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { SectionList, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchNearestServices } from "../../src/api/services";
 import { EmptyState } from "../../src/components/EmptyState";
@@ -19,6 +20,12 @@ export default function NearbyServicesScreen() {
   const [radius, setRadius] = useState<"SMALL" | "MEDIUM" | "LARGE" | "XL">(
     "LARGE",
   );
+  const [collapsed, setCollapsed] = useState({
+    bus: false,
+    rail: false,
+    ferry: false,
+    lightRail: false,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +35,18 @@ export default function NearbyServicesScreen() {
     return fetchNearestServices(location.lat, location.lon, radius, signal)
       .then((data) => {
         if (!Array.isArray(data)) return;
+
         setServices(data);
+
+        // const sorted = [...data].sort((a, b) => {
+        //   return a.serviceGroup.routeShortName.localeCompare(
+        //     b.serviceGroup.routeShortName,
+        //     undefined,
+        //     { numeric: true },
+        //   );
+        // });
+
+        // setServices(sorted);
       })
       .catch((err) => {
         if (err.name !== "AbortError") {
@@ -47,7 +65,7 @@ export default function NearbyServicesScreen() {
       controller?.abort();
       controller = new AbortController();
 
-      if (!showSpinner) {
+      if (showSpinner) {
         setLoading(true);
         setError(null);
       }
@@ -74,6 +92,112 @@ export default function NearbyServicesScreen() {
       clearInterval(interval);
     };
   }, [location?.lat, location?.lon, radius]);
+
+  const hasData = services.length > 0;
+  const sections = [
+    {
+      key: "bus",
+      title: "Bus",
+      data: services.filter((s) => s.routeType === 3),
+    },
+    {
+      key: "rail",
+      title: "Rail",
+      data: services.filter((s) => s.routeType === 2),
+    },
+    {
+      key: "ferry",
+      title: "Ferry",
+      data: services.filter((s) => s.routeType === 4),
+    },
+    {
+      key: "lightRail",
+      title: "Light Rail / Tram",
+      data: services.filter((s) => s.routeType === 0),
+    },
+  ]
+    // remove empty groups
+    .filter((s) => s.data.length > 0)
+    // collapse handling
+    .map((s) => ({
+      ...s,
+      data: collapsed[s.key as keyof typeof collapsed] ? [] : s.data,
+    }));
+  const isInitialLoading = (locLoading || loading) && !hasData;
+  const isRefreshing = (locLoading || loading) && hasData;
+
+  let content = null;
+  if (isInitialLoading) {
+    content = <Spinner />;
+  } else if (locError) {
+    content = (
+      <ErrorState
+        message={locError}
+        onRetry={() => {
+          /* TODO */
+        }}
+      />
+    );
+  } else if (error) {
+    content = (
+      <ErrorState
+        message={error}
+        onRetry={() => {
+          /* TODO */
+        }}
+      />
+    );
+  } else if (!location) {
+    content = <ErrorState message="Location unavailable" />;
+  } else if (!hasData) {
+    content = <EmptyState text="No nearby services" />;
+  } else {
+    content = (
+      <SectionList
+        sections={sections}
+        style={{ backgroundColor: "#eee" }}
+        keyExtractor={(item) =>
+          item.serviceGroup.routeShortName +
+          item.serviceGroup.tripHeadsign +
+          item.serviceGroup.directionId +
+          item.routeLongName
+        }
+        renderItem={({ item }) => (
+          <ServiceCard service={item} userLocation={location} />
+        )}
+        renderSectionHeader={({ section }) => {
+          const isCollapsed = collapsed[section.key as keyof typeof collapsed];
+
+          return (
+            <TouchableOpacity
+              onPress={() =>
+                setCollapsed((prev) => ({
+                  ...prev,
+                  [section.key]: !prev[section.key as keyof typeof collapsed],
+                }))
+              }
+              style={commonStyles.collapsibleCard}
+            >
+              <View style={commonStyles.collapsibleHeader}>
+                <Text
+                  style={commonStyles.collapsibleHeaderContents}
+                  numberOfLines={isCollapsed ? 2 : undefined}
+                >
+                  {section.title}
+                </Text>
+                <View style={commonStyles.chevronContainer}>
+                  <Text style={commonStyles.chevron}>
+                    {isCollapsed ? "▼" : "▲"}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+        stickySectionHeadersEnabled={false}
+      />
+    );
+  }
 
   return (
     <View
@@ -119,40 +243,7 @@ export default function NearbyServicesScreen() {
         })}
       </View>
 
-      {locLoading || (loading && <Spinner />)}
-      {locError && (
-        <ErrorState
-          message={locError}
-          onRetry={() => {
-            /* TODO: retry logic */
-          }}
-        />
-      )}
-      {error && (
-        <ErrorState
-          message={error}
-          onRetry={() => {
-            /* TODO: retry logic */
-          }}
-        />
-      )}
-      {!location && <ErrorState message="Location unavailable" />}
-      {!loading && services.length === 0 && (
-        <EmptyState text="No nearby services" />
-      )}
-
-      <FlatList
-        data={services}
-        style={{ backgroundColor: "#eee" }}
-        keyExtractor={(item) =>
-          item.serviceGroup.routeShortName +
-          item.serviceGroup.tripHeadsign +
-          item.serviceGroup.directionId
-        }
-        renderItem={({ item }) => (
-          <ServiceCard service={item} userLocation={location} />
-        )}
-      />
+      <View style={{ flex: 7, backgroundColor: "#eee" }}>{content}</View>
     </View>
   );
 }

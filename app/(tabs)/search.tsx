@@ -76,7 +76,8 @@ export default function SearchServicesScreen() {
           keyExtractor={(item) =>
             item.serviceGroup.routeShortName +
             item.serviceGroup.tripHeadsign +
-            item.serviceGroup.directionId
+            item.serviceGroup.directionId +
+            item.routeLongName
           }
           renderItem={({ item }) => <ServiceCardBrief service={item} />}
         />

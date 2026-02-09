@@ -27,6 +27,7 @@ export interface BriefServiceResponse {
   serviceGroup: ServiceGroup;
   routeShortName: string;
   routeLongName: string;
+  routeType: number;
 }
 
 export interface BriefStopResponse {
@@ -42,6 +43,7 @@ export interface FullServiceResponse {
   serviceGroup: ServiceGroup;
   routeShortName: string;
   routeLongName: string;
+  routeType: number;
   routeColor: string;
   routeTextColor: string;
   adjacentStop: BriefStopResponse;
@@ -63,5 +65,6 @@ export interface ServiceResponse {
   serviceGroup: ServiceGroup;
   routeShortName: string;
   routeLongName: string;
+  routeType: number;
   arrivalsAtNearestStop: ArrivalsAtStopResponse;
 }
