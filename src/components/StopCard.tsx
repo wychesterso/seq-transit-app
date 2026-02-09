@@ -1,16 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ArrivalResponse, ArrivalsAtStopResponse } from "../types/index";
 import { getMinutesUntilArrival } from "../utils/time";
 
 interface StopCardProps {
   arrival: ArrivalsAtStopResponse;
-  defaultExpanded?: boolean;
+  expanded: boolean;
+  onToggle: () => void;
 }
 
 export const StopCard: React.FC<StopCardProps> = ({
   arrival,
-  defaultExpanded = false,
+  expanded,
+  onToggle,
 }) => {
   const { stop, stopSequence, isFirstStop, nextThreeArrivals } = arrival;
   const stopName = stop.stopName;
@@ -20,14 +22,11 @@ export const StopCard: React.FC<StopCardProps> = ({
       ? a.effectiveDepartureSeconds
       : a.effectiveArrivalSeconds;
   };
-
   const getScheduledSeconds = (a: ArrivalResponse): number => {
     return isFirstStop
       ? a.scheduledDepartureSeconds
       : a.scheduledArrivalSeconds;
   };
-
-  const [expanded, setExpanded] = useState(defaultExpanded);
 
   // format next 3 arrivals
   const nextArrivals = nextThreeArrivals
@@ -46,7 +45,7 @@ export const StopCard: React.FC<StopCardProps> = ({
 
   return (
     <TouchableOpacity
-      onPress={() => setExpanded((v) => !v)}
+      onPress={onToggle}
       activeOpacity={0.7}
       style={styles.card}
     >

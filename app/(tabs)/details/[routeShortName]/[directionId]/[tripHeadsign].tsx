@@ -1,5 +1,6 @@
 import { fetchFullServiceInfo } from "@/src/api/services";
 import { ErrorState } from "@/src/components/ErrorState";
+import { ServiceMap } from "@/src/components/ServiceMap";
 import { Spinner } from "@/src/components/Spinner";
 import { StopCard } from "@/src/components/StopCard";
 import { useLocation } from "@/src/hooks/useLocation";
@@ -13,8 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function ServiceDetailsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-
-  const { location, loading: locLoading, error: locError } = useLocation();
+  const { location } = useLocation();
 
   const { routeShortName, tripHeadsign, directionId } = useLocalSearchParams<{
     routeShortName: string;
@@ -24,8 +24,10 @@ export default function ServiceDetailsScreen() {
   const dir = Number(directionId);
 
   const [service, setService] = useState<FullServiceResponse | null>(null);
+  const [focusedStopId, setFocusedStopId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [listReady, setListReady] = useState(false);
 
   const listRef = useRef<FlatList>(null);
   const hasScrolledRef = useRef(false);
@@ -57,23 +59,21 @@ export default function ServiceDetailsScreen() {
       });
   };
 
+  // force a state reset when service is changed
   useEffect(() => {
-    setService(null);
+    setFocusedStopId(null);
+    hasScrolledRef.current = false;
+  }, [routeShortName, tripHeadsign, dir]);
 
+  // fetch service info on load and when location changes
+  useEffect(() => {
     let isMounted = true;
-    const runFetch = () => {
-      const controller = new AbortController();
-
-      fetchServiceInfo(controller.signal);
-
-      return controller;
-    };
-
-    let controller = runFetch();
 
     // first load
     setLoading(true);
     setError(null);
+
+    const controller = new AbortController();
 
     fetchServiceInfo(controller.signal).finally(() => {
       if (isMounted) {
@@ -83,7 +83,7 @@ export default function ServiceDetailsScreen() {
 
     // refresh every 15s
     const interval = setInterval(() => {
-      controller = runFetch();
+      fetchServiceInfo(new AbortController().signal);
     }, 15000);
 
     // cleanup
@@ -94,21 +94,31 @@ export default function ServiceDetailsScreen() {
     };
   }, [routeShortName, tripHeadsign, dir, location?.lat, location?.lon]);
 
+  // set focused stop to nearest on load
   useEffect(() => {
-    if (!hasScrolledRef.current && nearestIndex >= 0) {
-      hasScrolledRef.current = true;
+    if (!service || nearestIndex < 0) return;
 
-      const timeout = setTimeout(() => {
-        listRef.current?.scrollToIndex({
-          index: nearestIndex,
-          animated: true,
-          viewPosition: 0.3,
-        });
-      }, 100);
+    setFocusedStopId((prev) =>
+      prev === null ? service.arrivalsAtStops[nearestIndex].stop.stopId : prev,
+    );
+  }, [service, nearestIndex]);
 
-      return () => clearTimeout(timeout);
-    }
-  }, [nearestIndex]);
+  // scroll to the currently focused stop whenever it changes
+  useEffect(() => {
+    if (!listReady || !focusedStopId) return;
+
+    const index = service?.arrivalsAtStops.findIndex(
+      (s) => s.stop.stopId === focusedStopId,
+    );
+
+    if (index === undefined || index < 0) return;
+
+    listRef.current?.scrollToIndex({
+      index,
+      animated: true,
+      viewPosition: 0.5,
+    });
+  }, [focusedStopId, listReady, service]);
 
   return (
     <View
@@ -161,10 +171,20 @@ export default function ServiceDetailsScreen() {
         )}
 
         {service && (
+          <ServiceMap
+            stops={service.arrivalsAtStops}
+            focusedStopId={focusedStopId}
+            onFocusStop={(stopId) => setFocusedStopId(stopId)}
+          />
+        )}
+
+        {service && (
           <FlatList
             data={service.arrivalsAtStops}
-            style={{ backgroundColor: "#eee" }}
             keyExtractor={(item) => item.stop.stopId}
+            ref={listRef}
+            style={{ backgroundColor: "#eee" }}
+            onLayout={() => setListReady(true)}
             onScrollToIndexFailed={(info) => {
               setTimeout(() => {
                 listRef.current?.scrollToIndex({
@@ -176,7 +196,12 @@ export default function ServiceDetailsScreen() {
             renderItem={({ item, index }) => (
               <StopCard
                 arrival={item}
-                defaultExpanded={index === nearestIndex}
+                expanded={focusedStopId === item.stop.stopId}
+                onToggle={() =>
+                  setFocusedStopId((prev) =>
+                    prev === item.stop.stopId ? null : item.stop.stopId,
+                  )
+                }
               />
             )}
           />
