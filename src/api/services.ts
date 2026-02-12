@@ -25,14 +25,11 @@ export async function fetchNearestServices(
 
 export async function fetchServicesByPrefix(
   prefix: string,
-  lat: number,
-  lon: number,
   signal?: AbortSignal,
 ): Promise<BriefServiceResponse[]> {
-  const res = await fetch(
-    `${API_BASE_URL}/services/prefix?prefix=${prefix}&lat=${lat}&lon=${lon}`,
-    { signal },
-  );
+  const res = await fetch(`${API_BASE_URL}/services/prefix?prefix=${prefix}`, {
+    signal,
+  });
 
   if (!res.ok) {
     throw new Error("Failed to fetch services");

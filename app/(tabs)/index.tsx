@@ -123,8 +123,8 @@ export default function NearbyServicesScreen() {
       ...s,
       data: collapsed[s.key as keyof typeof collapsed] ? [] : s.data,
     }));
+
   const isInitialLoading = (locLoading || loading) && !hasData;
-  const isRefreshing = (locLoading || loading) && hasData;
 
   let content = null;
   if (isInitialLoading) {

@@ -13,7 +13,6 @@ import { ErrorState } from "../../src/components/ErrorState";
 import { Header } from "../../src/components/Header";
 import { ServiceCardBrief } from "../../src/components/ServiceCardBrief";
 import { Spinner } from "../../src/components/Spinner";
-import { useLocation } from "../../src/hooks/useLocation";
 import { BriefServiceResponse } from "../../src/types";
 
 const NUMBER_ROWS = [
@@ -27,17 +26,13 @@ const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 export default function SearchServicesScreen() {
   const insets = useSafeAreaInsets();
 
-  const { location } = useLocation();
-
   const [query, setQuery] = useState("");
   const [services, setServices] = useState<BriefServiceResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchServices = (query: string, signal?: AbortSignal) => {
-    if (!location) return Promise.resolve();
-
-    return fetchServicesByPrefix(query, location.lat, location.lon, signal)
+    return fetchServicesByPrefix(query, signal)
       .then((data) => {
         if (!Array.isArray(data)) return;
         setServices(data);
@@ -59,28 +54,44 @@ export default function SearchServicesScreen() {
     return () => controller.abort();
   }, [query]);
 
+  const isInitialLoading = loading && !services.length;
+
+  let content = null;
+  if (isInitialLoading) {
+    content = <Spinner />;
+  } else if (error) {
+    content = (
+      <ErrorState
+        message={error}
+        onRetry={() => {
+          /* TODO */
+        }}
+      />
+    );
+  } else if (!services.length) {
+    content = <EmptyState text="No matching services" />;
+  } else {
+    content = (
+      <FlatList
+        data={services}
+        keyExtractor={(item) =>
+          item.serviceGroup.routeShortName +
+          item.serviceGroup.tripHeadsign +
+          item.serviceGroup.directionId +
+          item.routeLongName
+        }
+        renderItem={({ item }) => <ServiceCardBrief service={item} />}
+      />
+    );
+  }
+
   return (
     <View style={{ paddingTop: insets.top, flex: 1 }}>
       {/* RESULTS */}
       <View style={{ flex: 7, backgroundColor: "#eee" }}>
         <Header title={`Search: ${query || "—"}`} />
 
-        {loading && <Spinner />}
-        {error && <ErrorState message={error} />}
-        {!loading && query && services.length === 0 && (
-          <EmptyState text="No matching services" />
-        )}
-
-        <FlatList
-          data={services}
-          keyExtractor={(item) =>
-            item.serviceGroup.routeShortName +
-            item.serviceGroup.tripHeadsign +
-            item.serviceGroup.directionId +
-            item.routeLongName
-          }
-          renderItem={({ item }) => <ServiceCardBrief service={item} />}
-        />
+        {content}
       </View>
 
       {/* KEYPAD */}

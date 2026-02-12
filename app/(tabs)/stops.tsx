@@ -85,6 +85,49 @@ export default function NearbyStopsScreen() {
     return () => controller.abort();
   }, [selectedStopId]);
 
+  const isInitialLoading = (locLoading || loadingStops) && !stops.length;
+
+  let content = null;
+  if (isInitialLoading || loadingServices) {
+    content = <Spinner />;
+  } else if (locError) {
+    content = (
+      <ErrorState
+        message={locError}
+        onRetry={() => {
+          /* TODO */
+        }}
+      />
+    );
+  } else if (error) {
+    content = (
+      <ErrorState
+        message={error}
+        onRetry={() => {
+          /* TODO */
+        }}
+      />
+    );
+  } else if (!services.length) {
+    content = <EmptyState text="No services at this stop" />;
+  } else {
+    content = (
+      <FlatList
+        data={services}
+        style={{ backgroundColor: "#eee" }}
+        keyExtractor={(item) =>
+          item.serviceGroup.routeShortName +
+          item.serviceGroup.tripHeadsign +
+          item.serviceGroup.directionId +
+          item.routeLongName
+        }
+        renderItem={({ item }) => (
+          <ServiceCard service={item} userLocation={location!} />
+        )}
+      />
+    );
+  }
+
   return (
     <View style={{ paddingTop: insets.top, flex: 1 }}>
       <Header title="Nearby Stops" />
@@ -92,8 +135,6 @@ export default function NearbyStopsScreen() {
       <View style={{ backgroundColor: "#eee", flex: 1 }}>
         {/* STOP TABS */}
         <View style={{ height: 40 }}>
-          {locError && <ErrorState message={locError} />}
-
           <FlatList
             data={stops}
             horizontal
@@ -124,26 +165,7 @@ export default function NearbyStopsScreen() {
         </View>
 
         {/* SERVICES */}
-        {(loadingStops || loadingServices) && <Spinner />}
-        {error && <ErrorState message={error} />}
-
-        {!loadingStops && !loadingServices && services.length === 0 && (
-          <EmptyState text="No services at this stop" />
-        )}
-
-        <FlatList
-          data={services}
-          style={{ backgroundColor: "#eee" }}
-          keyExtractor={(item) =>
-            item.serviceGroup.routeShortName +
-            item.serviceGroup.tripHeadsign +
-            item.serviceGroup.directionId +
-            item.routeLongName
-          }
-          renderItem={({ item }) => (
-            <ServiceCard service={item} userLocation={location!} />
-          )}
-        />
+        {content}
       </View>
     </View>
   );
