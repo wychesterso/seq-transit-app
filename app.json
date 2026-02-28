@@ -20,7 +20,12 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.wycs.seqtransit"
+      "package": "com.wycs.seqtransit",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAk2ShoA5t9Y4OFwmMhrYFEM-lwr9wmQEs"
+        }
+      }
     },
     "platforms": ["android"],
     "plugins": [
