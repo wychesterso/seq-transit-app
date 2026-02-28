@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { ArrivalsAtStopResponse, CoordinatePoint } from "../types";
 
 interface ServiceMapProps {
@@ -52,28 +52,36 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
 
   return (
     <MapView
+      provider={PROVIDER_GOOGLE}
       ref={mapRef}
       style={{ height: 300 }}
       onMapReady={() => setMapReady(true)}
       initialRegion={{
-        latitude: stops[0].stop.stopLat,
-        longitude: stops[0].stop.stopLon,
+        latitude: firstStop.stopLat,
+        longitude: firstStop.stopLon,
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       }}
     >
       {shape && shape.length > 0 && (
         <Polyline
-          coordinates={shape.map((p) => ({
-            latitude: p.lat,
-            longitude: p.lon,
-          }))}
+          coordinates={shape
+            .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon))
+            .map((p) => ({
+              latitude: p.lat,
+              longitude: p.lon,
+            }))}
           strokeWidth={8}
           strokeColor={routeColor || "#000"}
         />
       )}
       {stops
-        .filter((s) => s.stop && s.stop.stopLat && s.stop.stopLon)
+        .filter(
+          (s) =>
+            s.stop &&
+            Number.isFinite(s.stop.stopLat) &&
+            Number.isFinite(s.stop.stopLon),
+        )
         .map((s) => (
           <Marker
             key={`${s.stop.stopId}-${focusedStopId === s.stop.stopId}`}
