@@ -77,6 +77,12 @@ export default function ServiceDetailsScreen() {
     }
   };
 
+  // reset focus when changing services
+  useEffect(() => {
+    hasSetInitialFocusRef.current = false;
+    setFocusedStopId(null);
+  }, [routeShortName, tripHeadsign, directionId]);
+
   /* -------------------- RELOAD -------------------- */
 
   const reload = async (isPullRefresh = false) => {
