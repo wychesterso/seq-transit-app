@@ -1,50 +1,81 @@
-# Welcome to your Expo app 👋
+# SEQ Transit – Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native (Expo) mobile application providing real-time public transport information for South East Queensland.
 
-## Get started
+Built as a companion client to the [SEQ Transit Backend Server](https://github.com/wychesterso/seq-transit-server).
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## Overview
 
-2. Start the app
+<img width="820" height="180" alt="D3" src="https://github.com/user-attachments/assets/0c85eb8a-bc5b-422b-b161-9264e19f8624" />
 
-   ```bash
-   npx expo start
-   ```
+Within the SEQ Transit pipeline, `seq-transit-app` provides a user interface for displaying:
 
-In the output, you'll find options to open the app in a
+- Nearby Services
+- Nearby Stops
+- Service Search
+- Service Details View
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+All data is sourced from the SEQ Transit backend, which consumes publicly available Translink feeds.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## Screens
 
-When you're ready, run:
+### Nearby Services
+Displays services with stops near the user’s current location, and upcoming arrivals for each.
 
+### Nearby Stops
+Displays nearby stop locations and upcoming arrivals.
+
+### Search
+Search for services by route number.
+
+### Service Details
+Displays:
+- Route map
+- Stop list
+- Next 3 real-time arrival predictions per stop
+
+---
+
+## Tech Stack
+
+- React Native
+- Expo
+- TypeScript
+
+---
+
+## Build
+
+### Android APK
 ```bash
-npm run reset-project
+eas login
+eas build --platform android --clear-cache
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Local Development
 
-## Learn more
+```bash
+npm install
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Screenshots
 
-## Join the community
+### Nearby Services
+<img width="180" height="390" alt="P1" src="https://github.com/user-attachments/assets/aa5ce7dd-802f-4d0d-8c5f-71b0618490e0" />
 
-Join our community of developers creating universal apps.
+### Nearby Stops
+<img width="180" height="390" alt="P2" src="https://github.com/user-attachments/assets/91667763-ac28-4c17-bf1c-9801168e4a7a" />
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Search
+<img width="180" height="390" alt="P3" src="https://github.com/user-attachments/assets/a35b24c0-5b5a-4571-b68a-535654687787" />
+
+### Service Details
+<img width="180" height="390" alt="P4" src="https://github.com/user-attachments/assets/8cc92aed-00ee-4913-a342-bba95fc3fcee" />
+
