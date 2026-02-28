@@ -1,79 +1,15 @@
-import { useEffect, useRef, useState } from "react";
-import MapView, { Marker, Polyline } from "react-native-maps";
-import { ArrivalsAtStopResponse, CoordinatePoint } from "../types";
+import { Text, View } from "react-native";
 
-interface ServiceMapProps {
-  stops: ArrivalsAtStopResponse[];
-  focusedStopId: string | null;
-  onFocusStop?: (stopId: string) => void;
-  shape?: CoordinatePoint[];
-  routeColor?: string;
-}
-
-export const ServiceMap: React.FC<ServiceMapProps> = ({
-  stops,
-  focusedStopId,
-  onFocusStop,
-  shape,
-  routeColor,
-}) => {
-  const mapRef = useRef<MapView>(null);
-  const [mapReady, setMapReady] = useState(false);
-  const prevFocusedStopRef = useRef<string | null>(null); // track previously focused stop
-
-  useEffect(() => {
-    if (!mapReady || !focusedStopId) return;
-
-    if (prevFocusedStopRef.current === focusedStopId) return;
-    prevFocusedStopRef.current = focusedStopId;
-
-    const stop = stops.find((s) => s.stop.stopId === focusedStopId)?.stop;
-    if (!stop) return;
-
-    mapRef.current?.animateCamera({
-      center: {
-        latitude: stop.stopLat,
-        longitude: stop.stopLon,
-      },
-      zoom: 16,
-    });
-  }, [focusedStopId, mapReady, stops]);
-
-  if (stops.length === 0) return null;
-
+export const ServiceMap = () => {
   return (
-    <MapView
-      ref={mapRef}
-      style={{ height: 300 }}
-      onMapReady={() => setMapReady(true)}
-      initialRegion={{
-        latitude: stops[0].stop.stopLat,
-        longitude: stops[0].stop.stopLon,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
+    <View
+      style={{
+        height: 300,
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      {shape && shape.length > 0 && (
-        <Polyline
-          coordinates={shape.map((p) => ({
-            latitude: p.lat,
-            longitude: p.lon,
-          }))}
-          strokeWidth={8}
-          strokeColor={routeColor || "#000"}
-        />
-      )}
-      {stops.map((s) => (
-        <Marker
-          key={`${s.stop.stopId}-${focusedStopId === s.stop.stopId}`}
-          pinColor={s.stop.stopId === focusedStopId ? "tomato" : "wheat"}
-          coordinate={{
-            latitude: s.stop.stopLat,
-            longitude: s.stop.stopLon,
-          }}
-          onPress={() => onFocusStop?.(s.stop.stopId)}
-        />
-      ))}
-    </MapView>
+      <Text>Map unavailable</Text>
+    </View>
   );
 };

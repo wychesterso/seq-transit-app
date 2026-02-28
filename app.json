@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "brisbane-bus",
-    "slug": "brisbane-bus",
+    "name": "SEQ Transit",
+    "slug": "seq-transit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -20,12 +20,9 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.brisbanebus"
+      "package": "com.wycs.seqtransit"
     },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
+    "platforms": ["android"],
     "plugins": [
       "expo-router",
       [
@@ -44,6 +41,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7b4a62e8-c8b8-47d2-a997-1b9f15acddf8"
+      }
     }
   }
 }

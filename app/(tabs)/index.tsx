@@ -1,6 +1,14 @@
 import { commonStyles } from "@/src/styles/commonStyles";
-import { useEffect, useState } from "react";
-import { SectionList, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  AppState,
+  AppStateStatus,
+  RefreshControl,
+  SectionList,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchNearestServices } from "../../src/api/services";
 import { EmptyState } from "../../src/components/EmptyState";
@@ -27,7 +35,14 @@ export default function NearbyServicesScreen() {
     lightRail: false,
   });
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const controllerRef = useRef<AbortController | null>(null);
+  const appState = useRef(AppState.currentState);
+
+  /* -------------------- FETCH -------------------- */
 
   const fetchServices = (signal?: AbortSignal) => {
     if (!location) return Promise.resolve();
@@ -36,17 +51,8 @@ export default function NearbyServicesScreen() {
       .then((data) => {
         if (!Array.isArray(data)) return;
 
+        setError(null);
         setServices(data);
-
-        // const sorted = [...data].sort((a, b) => {
-        //   return a.serviceGroup.routeShortName.localeCompare(
-        //     b.serviceGroup.routeShortName,
-        //     undefined,
-        //     { numeric: true },
-        //   );
-        // });
-
-        // setServices(sorted);
       })
       .catch((err) => {
         if (err.name !== "AbortError") {
@@ -55,43 +61,82 @@ export default function NearbyServicesScreen() {
       });
   };
 
+  /* -------------------- RELOAD -------------------- */
+
+  const reload = async (showSpinner = true, isPullRefresh = false) => {
+    if (!location) return;
+
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    if (showSpinner && !isPullRefresh) {
+      setLoading(true);
+      setError(null);
+    }
+    if (isPullRefresh) setRefreshing(true);
+
+    try {
+      await fetchServices(controller.signal);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  /* -------------------- POLL -------------------- */
+
+  const startPolling = () => {
+    if (intervalRef.current) return;
+
+    intervalRef.current = setInterval(() => {
+      reload(false);
+    }, 30000); // 30s
+  };
+
+  const stopPolling = () => {
+    intervalRef.current && clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    controllerRef.current?.abort();
+  };
+
   useEffect(() => {
     if (!location) return;
 
-    let isMounted = true;
-    let controller: AbortController;
+    reload(true);
+    startPolling();
 
-    const runFetch = (showSpinner = false) => {
-      controller?.abort();
-      controller = new AbortController();
-
-      if (showSpinner) {
-        setLoading(true);
-        setError(null);
-      }
-
-      fetchServices(controller.signal).finally(() => {
-        if (isMounted) {
-          setLoading(false);
-        }
-      });
-    };
-
-    // first load (with spinner)
-    runFetch(true);
-
-    // refresh every 15s
-    const interval = setInterval(() => {
-      runFetch(false);
-    }, 15000);
-
-    // cleanup
-    return () => {
-      isMounted = false;
-      controller?.abort();
-      clearInterval(interval);
-    };
+    return stopPolling;
   }, [location?.lat, location?.lon, radius]);
+
+  /* -------------------- BACKGROUND HANDLING -------------------- */
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      "change",
+      (nextState: AppStateStatus) => {
+        const wasActive = appState.current === "active";
+
+        if (wasActive && nextState.match(/inactive|background/)) {
+          stopPolling();
+        }
+
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextState === "active"
+        ) {
+          reload(false);
+          startPolling();
+        }
+
+        appState.current = nextState;
+      },
+    );
+
+    return () => subscription.remove();
+  }, []);
+
+  /* -------------------- CONTENT -------------------- */
 
   const hasData = services.length > 0;
   const sections = [
@@ -130,23 +175,9 @@ export default function NearbyServicesScreen() {
   if (isInitialLoading) {
     content = <Spinner />;
   } else if (locError) {
-    content = (
-      <ErrorState
-        message={locError}
-        onRetry={() => {
-          /* TODO */
-        }}
-      />
-    );
+    content = <ErrorState message={locError} onRetry={() => reload(true)} />;
   } else if (error) {
-    content = (
-      <ErrorState
-        message={error}
-        onRetry={() => {
-          /* TODO */
-        }}
-      />
-    );
+    content = <ErrorState message={error} onRetry={() => reload(true)} />;
   } else if (!location) {
     content = <ErrorState message="Location unavailable" />;
   } else if (!hasData) {
@@ -156,6 +187,12 @@ export default function NearbyServicesScreen() {
       <SectionList
         sections={sections}
         style={{ backgroundColor: "#eee" }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => reload(false, true)}
+          />
+        }
         keyExtractor={(item) =>
           item.serviceGroup.routeShortName +
           item.serviceGroup.tripHeadsign +
@@ -198,6 +235,8 @@ export default function NearbyServicesScreen() {
       />
     );
   }
+
+  /* -------------------- UI -------------------- */
 
   return (
     <View

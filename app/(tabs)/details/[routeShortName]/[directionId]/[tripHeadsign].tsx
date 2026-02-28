@@ -8,7 +8,15 @@ import { FullServiceResponse } from "@/src/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import {
+  AppState,
+  AppStateStatus,
+  FlatList,
+  RefreshControl,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ServiceDetailsScreen() {
@@ -27,110 +35,142 @@ export default function ServiceDetailsScreen() {
   const [focusedStopId, setFocusedStopId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [listReady, setListReady] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const listRef = useRef<FlatList>(null);
-  const hasScrolledRef = useRef(false);
-  const prevFocusedStopIdRef = useRef<string | null>(null);
+  const appState = useRef(AppState.currentState);
+  const fetchControllerRef = useRef<AbortController | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /* -------------------- FETCH SERVICE -------------------- */
+
+  const hasSetInitialFocusRef = useRef(false);
+
+  const fetchService = async (signal?: AbortSignal) => {
+    if (!location) return;
+    fetchControllerRef.current?.abort();
+    const controller = new AbortController();
+    fetchControllerRef.current = controller;
+
+    setError(null);
+    try {
+      const data = await fetchFullServiceInfo(
+        routeShortName,
+        tripHeadsign,
+        dir,
+        location.lat,
+        location.lon,
+        signal ?? controller.signal,
+      );
+      setService(data);
+
+      // only auto-focus nearest stop on first load
+      if (!hasSetInitialFocusRef.current && data.adjacentStop) {
+        const nearest = data.arrivalsAtStops.find(
+          (s) => s.stop.stopId === data.adjacentStop!.stopId,
+        );
+        if (nearest) setFocusedStopId(nearest.stop.stopId);
+        hasSetInitialFocusRef.current = true;
+      }
+    } catch (err: any) {
+      if (err.name !== "AbortError") setError("Failed to load service info");
+    }
+  };
+
+  /* -------------------- RELOAD -------------------- */
+
+  const reload = async (isPullRefresh = false) => {
+    if (isPullRefresh) setRefreshing(true);
+    else setLoading(true);
+    try {
+      await fetchService();
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  /* -------------------- POLLING -------------------- */
+
+  const startPolling = () => {
+    if (intervalRef.current) return;
+    intervalRef.current = setInterval(() => fetchService(), 30000);
+  };
+  const stopPolling = () => {
+    intervalRef.current && clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    fetchControllerRef.current?.abort();
+  };
+
+  useEffect(() => {
+    reload();
+    startPolling();
+    return stopPolling;
+  }, [routeShortName, tripHeadsign, dir, location?.lat, location?.lon]);
+
+  /* -------------------- BACKGROUND HANDLING -------------------- */
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener(
+      "change",
+      (nextState: AppStateStatus) => {
+        const wasActive = appState.current === "active";
+
+        if (wasActive && nextState.match(/inactive|background/)) stopPolling();
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextState === "active"
+        ) {
+          reload();
+          startPolling();
+        }
+
+        appState.current = nextState;
+      },
+    );
+    return () => subscription.remove();
+  }, []);
+
+  /* -------------------- NEAREST STOP INDEX -------------------- */
 
   const nearestIndex = useMemo(() => {
     if (!service?.adjacentStop) return -1;
-
     return service.arrivalsAtStops.findIndex(
-      (s) => s.stop.stopId === service.adjacentStop.stopId,
+      (s) => s.stop.stopId === service.adjacentStop!.stopId,
     );
   }, [service]);
 
-  const fetchServiceInfo = (signal?: AbortSignal) => {
-    if (!location) return Promise.resolve();
+  /* -------------------- SCROLL TO FOCUSED STOP -------------------- */
 
-    return fetchFullServiceInfo(
-      routeShortName,
-      tripHeadsign,
-      dir,
-      location.lat,
-      location.lon,
-      signal,
-    )
-      .then(setService)
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          setError("Failed to load service info");
-        }
-      });
-  };
+  const prevFocusedStopIdRef = useRef<string | null>(null);
 
-  // force a state reset when service is changed
   useEffect(() => {
-    setFocusedStopId(null);
-    hasScrolledRef.current = false;
-  }, [routeShortName, tripHeadsign, dir]);
+    if (!service || !focusedStopId) return;
 
-  // fetch service info on load and when location changes
-  useEffect(() => {
-    let isMounted = true;
-
-    // first load
-    setLoading(true);
-    setError(null);
-
-    const controller = new AbortController();
-
-    fetchServiceInfo(controller.signal).finally(() => {
-      if (isMounted) {
-        setLoading(false);
-      }
-    });
-
-    // refresh every 15s
-    const interval = setInterval(() => {
-      fetchServiceInfo(new AbortController().signal);
-    }, 15000);
-
-    // cleanup
-    return () => {
-      isMounted = false;
-      controller.abort();
-      clearInterval(interval);
-    };
-  }, [routeShortName, tripHeadsign, dir, location?.lat, location?.lon]);
-
-  // set focused stop to nearest on load
-  useEffect(() => {
-    if (!service || nearestIndex < 0) return;
-
-    setFocusedStopId((prev) =>
-      prev === null ? service.arrivalsAtStops[nearestIndex].stop.stopId : prev,
-    );
-  }, [service, nearestIndex]);
-
-  // scroll to the currently focused stop whenever it changes
-  useEffect(() => {
-    if (!listReady || !focusedStopId) return;
-
+    // don't scroll if stop hasn't changed
     if (prevFocusedStopIdRef.current === focusedStopId) return;
-    prevFocusedStopIdRef.current = focusedStopId;
 
-    const index = service?.arrivalsAtStops.findIndex(
+    const index = service.arrivalsAtStops.findIndex(
       (s) => s.stop.stopId === focusedStopId,
     );
-
-    if (index === undefined || index < 0) return;
-
+    if (index < 0) return;
     listRef.current?.scrollToIndex({
       index,
       animated: true,
       viewPosition: 0.5,
     });
-  }, [focusedStopId, listReady, service]);
+
+    prevFocusedStopIdRef.current = focusedStopId;
+  }, [focusedStopId, service]);
+
+  /* -------------------- UI -------------------- */
+
+  const isInitialLoading = loading && !service;
+  const isEmpty = !loading && service && service.arrivalsAtStops.length === 0;
 
   return (
-    <View
-      style={{
-        paddingTop: insets.top,
-        flex: 1,
-      }}
-    >
+    <View style={{ paddingTop: insets.top, flex: 1 }}>
+      {/* Header */}
       <View
         style={{
           backgroundColor: "#ef60a3",
@@ -147,32 +187,19 @@ export default function ServiceDetailsScreen() {
         </TouchableOpacity>
 
         <View>
-          <Text
-            style={{
-              fontSize: 24,
-              fontWeight: "700",
-              color: "#242b4c",
-            }}
-          >
+          <Text style={{ fontSize: 24, fontWeight: "700", color: "#242b4c" }}>
             {routeShortName || "—"}
           </Text>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: "#242b4c",
-            }}
-          >
+          <Text style={{ fontSize: 16, fontWeight: "600", color: "#242b4c" }}>
             to {tripHeadsign || "—"}
           </Text>
         </View>
       </View>
+
       <View style={{ backgroundColor: "#eee", flex: 1 }}>
-        {loading && <Spinner />}
-        {error && <ErrorState message={error} />}
-        {!loading && !service && (
-          <ErrorState message="No service data available" />
-        )}
+        {isInitialLoading && <Spinner />}
+        {error && <ErrorState message={error} onRetry={reload} />}
+        {isEmpty && <ErrorState message="No service data available" />}
 
         {service && (
           <ServiceMap
@@ -192,16 +219,22 @@ export default function ServiceDetailsScreen() {
             keyExtractor={(item) => item.stop.stopId}
             ref={listRef}
             style={{ backgroundColor: "#eee" }}
-            onLayout={() => setListReady(true)}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => reload(true)}
+              />
+            }
             onScrollToIndexFailed={(info) => {
               setTimeout(() => {
                 listRef.current?.scrollToIndex({
                   index: info.index,
                   animated: true,
+                  viewPosition: 0.5,
                 });
               }, 300);
             }}
-            renderItem={({ item, index }) => (
+            renderItem={({ item }) => (
               <StopCard
                 arrival={item}
                 expanded={focusedStopId === item.stop.stopId}

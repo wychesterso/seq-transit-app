@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   ScrollView,
@@ -27,32 +27,49 @@ export default function SearchServicesScreen() {
   const insets = useSafeAreaInsets();
 
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+
   const [services, setServices] = useState<BriefServiceResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchServices = (query: string, signal?: AbortSignal) => {
-    return fetchServicesByPrefix(query, signal)
-      .then((data) => {
-        if (!Array.isArray(data)) return;
-        setServices(data);
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          setError("Failed to load services");
-        }
-      });
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  /* -------------------- DEBOUNCE -------------------- */
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedQuery(query), 500);
+    return () => clearTimeout(handler);
+  }, [query]);
+
+  /* -------------------- LOAD SERVICES -------------------- */
+
+  const loadServices = async (q: string) => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    if (!services.length) setLoading(true);
+    setError(null);
+
+    try {
+      const data = await fetchServicesByPrefix(q, controller.signal);
+      if (!Array.isArray(data)) return;
+      setServices(data);
+    } catch (err: any) {
+      if (err.name !== "AbortError") setError("Failed to load services");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
+    loadServices(debouncedQuery);
+    // cleanup on unmount
+    return () => abortControllerRef.current?.abort();
+  }, [debouncedQuery]);
 
-    fetchServices(query, controller.signal).finally(() => setLoading(false));
-
-    return () => controller.abort();
-  }, [query]);
+  /* -------------------- CONTENT -------------------- */
 
   const isInitialLoading = loading && !services.length;
 
@@ -61,12 +78,7 @@ export default function SearchServicesScreen() {
     content = <Spinner />;
   } else if (error) {
     content = (
-      <ErrorState
-        message={error}
-        onRetry={() => {
-          /* TODO */
-        }}
-      />
+      <ErrorState message={error} onRetry={() => loadServices(query)} />
     );
   } else if (!services.length) {
     content = <EmptyState text="No matching services" />;
@@ -84,6 +96,8 @@ export default function SearchServicesScreen() {
       />
     );
   }
+
+  /* -------------------- UI -------------------- */
 
   return (
     <View style={{ paddingTop: insets.top, flex: 1 }}>
