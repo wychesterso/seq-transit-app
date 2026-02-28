@@ -24,11 +24,15 @@ export default function ServiceDetailsScreen() {
   const router = useRouter();
   const { location } = useLocation();
 
-  const { routeShortName, tripHeadsign, directionId } = useLocalSearchParams<{
+  const {
+    routeShortName = "",
+    tripHeadsign = "",
+    directionId = "0",
+  } = useLocalSearchParams<{
     routeShortName: string;
     tripHeadsign: string;
     directionId: string;
-  }>();
+  }>() ?? {};
   const dir = Number(directionId);
 
   const [service, setService] = useState<FullServiceResponse | null>(null);
@@ -109,9 +113,18 @@ export default function ServiceDetailsScreen() {
   };
 
   useEffect(() => {
-    reload();
-    startPolling();
-    return stopPolling;
+    let mounted = true;
+    const init = async () => {
+      await reload();
+      if (mounted) startPolling();
+    };
+
+    init();
+
+    return () => {
+      mounted = false;
+      stopPolling();
+    };
   }, [routeShortName, tripHeadsign, dir, location?.lat, location?.lon]);
 
   /* -------------------- BACKGROUND HANDLING -------------------- */
@@ -174,6 +187,13 @@ export default function ServiceDetailsScreen() {
   const isInitialLoading = loading && !service;
   const isEmpty = !loading && service && service.arrivalsAtStops.length === 0;
 
+  const hasValidStops =
+    service?.arrivalsAtStops &&
+    service.arrivalsAtStops.length > 0 &&
+    service.arrivalsAtStops.every(
+      (s) => s.stop && s.stop.stopLat && s.stop.stopLon,
+    );
+
   return (
     <View style={{ paddingTop: insets.top, flex: 1 }}>
       {/* Header */}
@@ -207,7 +227,7 @@ export default function ServiceDetailsScreen() {
         {error && <ErrorState message={error} onRetry={reload} />}
         {isEmpty && <ErrorState message="No service data available" />}
 
-        {service && (
+        {hasValidStops ? (
           <ServiceMap
             stops={service.arrivalsAtStops}
             focusedStopId={focusedStopId}
@@ -217,9 +237,9 @@ export default function ServiceDetailsScreen() {
               service.routeColor ? `#${service.routeColor}` : "#ef60a3"
             }
           />
-        )}
+        ) : null}
 
-        {service && (
+        {hasValidStops ? (
           <FlatList
             data={service.arrivalsAtStops}
             keyExtractor={(item) => item.stop.stopId}
@@ -252,7 +272,7 @@ export default function ServiceDetailsScreen() {
               />
             )}
           />
-        )}
+        ) : null}
       </View>
     </View>
   );

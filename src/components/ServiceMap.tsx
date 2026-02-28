@@ -11,7 +11,7 @@ interface ServiceMapProps {
 }
 
 export const ServiceMap: React.FC<ServiceMapProps> = ({
-  stops,
+  stops = [],
   focusedStopId,
   onFocusStop,
   shape,
@@ -22,7 +22,7 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
   const prevFocusedStopRef = useRef<string | null>(null); // track previously focused stop
 
   useEffect(() => {
-    if (!mapReady || !focusedStopId) return;
+    if (!mapReady || !focusedStopId || stops.length === 0) return;
 
     if (prevFocusedStopRef.current === focusedStopId) return;
     prevFocusedStopRef.current = focusedStopId;
@@ -39,7 +39,16 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
     });
   }, [focusedStopId, mapReady, stops]);
 
-  if (stops.length === 0) return null;
+  if (!stops || stops.length === 0) return null;
+
+  const firstStop = stops[0].stop;
+  if (
+    !firstStop ||
+    !Number.isFinite(firstStop.stopLat) ||
+    !Number.isFinite(firstStop.stopLon)
+  ) {
+    return null;
+  }
 
   return (
     <MapView
@@ -63,17 +72,19 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
           strokeColor={routeColor || "#000"}
         />
       )}
-      {stops.map((s) => (
-        <Marker
-          key={`${s.stop.stopId}-${focusedStopId === s.stop.stopId}`}
-          pinColor={s.stop.stopId === focusedStopId ? "tomato" : "wheat"}
-          coordinate={{
-            latitude: s.stop.stopLat,
-            longitude: s.stop.stopLon,
-          }}
-          onPress={() => onFocusStop?.(s.stop.stopId)}
-        />
-      ))}
+      {stops
+        .filter((s) => s.stop && s.stop.stopLat && s.stop.stopLon)
+        .map((s) => (
+          <Marker
+            key={`${s.stop.stopId}-${focusedStopId === s.stop.stopId}`}
+            pinColor={s.stop.stopId === focusedStopId ? "tomato" : "wheat"}
+            coordinate={{
+              latitude: s.stop.stopLat,
+              longitude: s.stop.stopLon,
+            }}
+            onPress={() => onFocusStop?.(s.stop.stopId)}
+          />
+        ))}
     </MapView>
   );
 };
