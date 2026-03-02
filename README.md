@@ -2,7 +2,7 @@
 
 A React Native (Expo) mobile application providing real-time public transport information for South East Queensland.
 
-Built as a companion client to the [SEQ Transit Backend Server](https://github.com/wychesterso/seq-transit-server).
+All data is sourced from the SEQ Transit backend, which consumes publicly available Translink feeds.
 
 ---
 
@@ -17,7 +17,9 @@ Within the SEQ Transit pipeline, `seq-transit-app` provides a user interface for
 - Service Search
 - Service Details View
 
-All data is sourced from the SEQ Transit backend, which consumes publicly available Translink feeds.
+Companion Projects:
+- [Static Loader](https://github.com/wychesterso/seq-transit-static-loader)
+- [API Server](https://github.com/wychesterso/seq-transit-server)
 
 ---
 
